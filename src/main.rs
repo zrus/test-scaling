@@ -1,16 +1,16 @@
-use std::{io::BufWriter, num::NonZeroU32};
+use std::{fmt::Display, io::BufWriter, num::NonZeroU32};
 
 // use bastion::prelude::*;
+use anyhow::Error;
 use byte_slice_cast::*;
 use fast_image_resize as fr;
 use gst::{
-    element_error,
-    glib::Error,
+    element_error, glib,
     prelude::{Cast, ElementExt, GstBinExt},
 };
 use gstreamer as gst;
 use gstreamer_app as gst_app;
-use image;
+use image::{self, ColorType, ImageFormat};
 
 #[derive(Debug, Display, Error)]
 #[display(fmt = "Received error from {}: {} (debug: {:?})", src, error, debug)]

@@ -1242,6 +1242,7 @@ dependencies = [
 name = "test-scaling"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bastion",
  "byte-slice-cast",
  "fast_image_resize",
