@@ -45,7 +45,7 @@ fn main() {
 
     for url in cam_list {
         let handle = std::thread::spawn(|| {
-            create_pipeline(url).and_then(|pipeline| main_loop(pipeline));
+            create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url));
         });
         handles.push(handle);
     }
@@ -159,8 +159,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     Ok(pipeline)
 }
 
-fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
-    println!("Start main loop");
+fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
+    println!("Start main loop {}", url);
     pipeline.set_state(gst::State::Playing)?;
 
     let bus = pipeline
