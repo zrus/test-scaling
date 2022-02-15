@@ -107,7 +107,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                 })?;
 
                 let image = image::load_from_memory_with_format(samples, ImageFormat::Jpeg);
-                let new_image = match image {
+                match image {
                     Ok(image) => {
                         let width = NonZeroU32::new(image.width()).unwrap();
                         let height = NonZeroU32::new(image.height()).unwrap();
