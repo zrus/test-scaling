@@ -155,7 +155,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    println!("End of pipeline");
+    println!("Pipeline {}", url);
     Ok(pipeline)
 }
 
