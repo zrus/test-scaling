@@ -176,7 +176,7 @@ fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
             }
             MessageView::Error(err) => {
                 pipeline.set_state(gst::State::Null)?;
-                println!("Error: {:?}", err.error());
+                println!("Error at {}: {:?}", url, err.error());
                 return Err(ErrorMessage {
                     src: msg
                         .src()
