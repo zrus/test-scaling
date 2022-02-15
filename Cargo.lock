@@ -1547,6 +1547,7 @@ dependencies = [
  "byte-slice-cast",
  "derive_more",
  "fast_image_resize",
+ "futures-lite",
  "gstreamer",
  "gstreamer-app",
  "image",

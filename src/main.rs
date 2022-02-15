@@ -5,6 +5,7 @@ use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
 use fast_image_resize as fr;
+use futures_lite::future;
 use gst::{
     element_error, glib,
     prelude::{Cast, ElementExt, GstBinExt, GstObjectExt},
@@ -22,8 +23,7 @@ struct ErrorMessage {
     source: glib::Error,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let cam_list = vec![
         "rtsp://10.50.31.171/1/h264major",
         "rtsp://10.50.31.172/1/h264major",
@@ -43,9 +43,10 @@ async fn main() {
     ];
 
     for url in cam_list {
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .spawn_blocking(|| create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)));
+        let ex = smol::Executor::new();
+        let task =
+            ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) });
+        ex.run(future::pending::<(), ()>);
     }
 }
 

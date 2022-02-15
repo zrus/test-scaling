@@ -16,3 +16,4 @@ anyhow = "*"
 derive_more = "*"
 tokio = { version = "*", features = ["full"] }
 smol = "*"
+futures-lite = "*"
