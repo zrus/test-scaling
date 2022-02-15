@@ -43,9 +43,9 @@ async fn main() {
     ];
 
     for url in cam_list {
-        tokio::task::spawn_blocking(
+        tokio::task::spawn_blocking(|| {
             create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
-        );
+        });
     }
 }
 
