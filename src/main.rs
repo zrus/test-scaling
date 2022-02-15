@@ -1,7 +1,7 @@
 use std::{io::BufWriter, num::NonZeroU32};
 
-use bastion::prelude::*;
 use anyhow::Error;
+use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
 use fast_image_resize as fr;
@@ -43,9 +43,9 @@ async fn main() {
     ];
 
     for url in cam_list {
-        tokio::task::spawn_blocking(|| {
-            create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
-        });
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .spawn_blocking(|| create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)));
     }
 }
 
