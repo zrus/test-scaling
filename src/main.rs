@@ -1,8 +1,9 @@
-use std::{fmt::Display, io::BufWriter, num::NonZeroU32};
+use std::{io::BufWriter, num::NonZeroU32};
 
 // use bastion::prelude::*;
 use anyhow::Error;
 use byte_slice_cast::*;
+use derive_more::{Display, Error};
 use fast_image_resize as fr;
 use gst::{
     element_error, glib,
