@@ -7,7 +7,7 @@ use derive_more::{Display, Error};
 use fast_image_resize as fr;
 use gst::{
     element_error, glib,
-    prelude::{Cast, ElementExt, GstBinExt},
+    prelude::{Cast, ElementExt, GstBinExt, GstObjectExt},
 };
 use gstreamer as gst;
 use gstreamer_app as gst_app;
