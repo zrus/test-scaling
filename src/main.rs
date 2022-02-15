@@ -43,17 +43,10 @@ fn main() {
     Bastion::init();
     Bastion::start();
 
-    let mut handles = vec![];
-
     for url in cam_list {
-        let handle = blocking!(
+        blocking!(
             create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
         );
-        handles.push(handle);
-    }
-
-    for handle in handles {
-        run!(handle);
     }
 
     Bastion::block_until_stopped();
