@@ -42,12 +42,17 @@ fn main() {
         "rtsp://10.50.13.249/1/h264major",
     ];
 
-    for url in cam_list {
-        let ex = smol::Executor::new();
-        let task =
-            ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) });
-        ex.run(future::pending::<()>());
-    }
+    let task = async {
+        for url in cam_list {
+            let ex = smol::Executor::new();
+            let task = ex.spawn(async {
+                create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
+            });
+            ex.run(future::pending::<()>());
+        }
+    };
+
+    future::block_on(task);
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
