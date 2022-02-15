@@ -1,6 +1,6 @@
 use std::{io::BufWriter, num::NonZeroU32};
 
-// use bastion::prelude::*;
+use bastion::prelude::*;
 use anyhow::Error;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
@@ -40,19 +40,23 @@ fn main() {
         "rtsp://10.50.13.248/1/h264major",
         "rtsp://10.50.13.249/1/h264major",
     ];
+    Bastion::init();
+    Bastion::start();
 
     let mut handles = vec![];
 
     for url in cam_list {
-        let handle = std::thread::spawn(|| {
-            create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url));
-        });
+        let handle = blocking!(
+            create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
+        );
         handles.push(handle);
     }
 
     for handle in handles {
-        handle.join();
+        run!(handle);
     }
+
+    Bastion::block_until_stopped();
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
