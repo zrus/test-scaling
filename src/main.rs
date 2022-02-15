@@ -5,7 +5,6 @@ use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
 use fast_image_resize as fr;
-use futures_lite::future;
 use gst::{
     element_error, glib,
     prelude::{Cast, ElementExt, GstBinExt, GstObjectExt},
@@ -46,9 +45,11 @@ fn main() {
     Bastion::start();
 
     for url in cam_list {
-        let ex = smol::Executor::new();
-        ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) })
-            .detach();
+        Bastion::children(|children| {
+            children.with_exec(|ctx| {
+                blocking! { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) };
+            })
+        });
     }
 
     Bastion::block_until_stopped();
