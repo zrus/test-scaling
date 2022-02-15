@@ -14,3 +14,5 @@ image = "*"
 fast_image_resize = "*"
 anyhow = "*"
 derive_more = "*"
+tokio = { version = "*", features = ["full"] }
+smol = "*"

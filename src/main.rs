@@ -22,7 +22,8 @@ struct ErrorMessage {
     source: glib::Error,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cam_list = vec![
         "rtsp://10.50.31.171/1/h264major",
         "rtsp://10.50.31.172/1/h264major",
@@ -40,16 +41,12 @@ fn main() {
         "rtsp://10.50.13.248/1/h264major",
         "rtsp://10.50.13.249/1/h264major",
     ];
-    Bastion::init();
-    Bastion::start();
 
     for url in cam_list {
-        blocking!(
+        tokio::task::spawn_blocking(
             create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
         );
     }
-
-    Bastion::block_until_stopped();
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
