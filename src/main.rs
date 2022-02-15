@@ -47,8 +47,8 @@ fn main() {
 
     for url in cam_list {
         let ex = smol::Executor::new();
-        ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) })
-            .detach();
+        ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) });
+        std::thread::spawn(move || future::block_on(ex.run(future::pending::<()>())));
     }
 
     Bastion::block_until_stopped();
