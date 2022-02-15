@@ -45,13 +45,11 @@ fn main() {
     Bastion::init();
     Bastion::start();
 
-    let task = async {
-        for url in cam_list {
-            let ex = smol::Executor::new();
-            ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) })
-                .detach();
-        }
-    };
+    for url in cam_list {
+        let ex = smol::Executor::new();
+        ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) })
+            .detach();
+    }
 
     Bastion::block_until_stopped();
 }
@@ -116,7 +114,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                         let width = NonZeroU32::new(image.width()).unwrap();
                         let height = NonZeroU32::new(image.height()).unwrap();
 
-                        let mut src_image = fr::Image::from_vec_u8(
+                        let src_image = fr::Image::from_vec_u8(
                             width,
                             height,
                             image.to_rgb8().into_raw(),
