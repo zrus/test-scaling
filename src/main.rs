@@ -46,7 +46,7 @@ fn main() {
         let ex = smol::Executor::new();
         let task =
             ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) });
-        ex.run(future::pending::<(), ()>);
+        ex.run(future::pending::<()>());
     }
 }
 
