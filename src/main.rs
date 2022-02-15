@@ -42,17 +42,18 @@ fn main() {
         "rtsp://10.50.13.249/1/h264major",
     ];
 
+    Bastion::init();
+    Bastion::start();
+
     let task = async {
         for url in cam_list {
             let ex = smol::Executor::new();
-            let task = ex.spawn(async {
-                create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
-            });
-            std::thread::spawn(move || future::block_on(ex.run(future::pending::<()>())));
+            ex.spawn(async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)) })
+                .detach();
         }
     };
 
-    future::block_on(task);
+    Bastion::block_until_stopped();
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
