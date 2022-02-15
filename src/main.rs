@@ -128,7 +128,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                         .unwrap();
 
                         let dst_width = NonZeroU32::new(720).unwrap();
-                        let dst_height = NonZeroU32::new(540).unwrap();
+                        let dst_height = NonZeroU32::new(480).unwrap();
 
                         let mut dst_image =
                             fr::Image::new(dst_width, dst_height, src_image.pixel_type());
