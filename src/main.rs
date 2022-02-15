@@ -56,6 +56,7 @@ fn main() {
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
+    println!("Pipeline {}", url);
     gst::init()?;
 
     let pipeline = gst::parse_launch(&format!(
@@ -155,7 +156,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    println!("Pipeline {}", url);
     Ok(pipeline)
 }
 
