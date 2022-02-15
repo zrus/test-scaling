@@ -48,7 +48,7 @@ fn main() {
             let task = ex.spawn(async {
                 create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url))
             });
-            ex.run(future::pending::<()>());
+            std::thread::spawn(move || future::block_on(ex.run(future::pending::<()>())));
         }
     };
 
