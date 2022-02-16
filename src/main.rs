@@ -121,10 +121,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc.link(&vaapijpegenc)?;
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
-    sink1.set_property("name", "app1");
-    sink1.set_property("max-buffers", "100");
-    sink1.set_property("emit-signals", false);
-    sink1.set_property("drop", true);
+    sink1.set_property_from_str("name", "app1");
+    sink1.set_property_from_str("max-buffers", "100");
+    sink1.set_property_from_str("emit-signals", "false");
+    sink1.set_property_from_str("drop", "true");
     vaapijpegenc.link(&sink1)?;
 
     // THUMNAIL
@@ -156,10 +156,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     // Initialize AppSink 2
     let sink2 = gst::ElementFactory::make("appsink", None)?;
-    sink2.set_property("name", "app2");
-    sink2.set_property("max-buffers", "100");
-    sink2.set_property("emit-signals", false);
-    sink2.set_property("drop", true);
+    sink2.set_property_from_str("name", "app2");
+    sink2.set_property_from_str("max-buffers", "100");
+    sink2.set_property_from_str("emit-signals", "false");
+    sink2.set_property_from_str("drop", "true");
     vaapijpegenc1.link(&sink2)?;
 
     // ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
