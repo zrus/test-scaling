@@ -25,7 +25,16 @@ struct ErrorMessage {
 
 fn main() {
     let cam_list = vec![
-        // "rtsp://10.50.13.240/1/h264major",
+        "rtsp://10.50.31.171/1/h264major",
+        "rtsp://10.50.13.231/1/h264major",
+        "rtsp://10.50.13.233/1/h264major",
+        "rtsp://10.50.13.234/1/h264major",
+        "rtsp://10.50.13.235/1/h264major",
+        "rtsp://10.50.13.236/1/h264major",
+        "rtsp://10.50.13.237/1/h264major",
+        "rtsp://10.50.13.238/1/h264major",
+        "rtsp://10.50.13.239/1/h264major",
+        "rtsp://10.50.13.240/1/h264major",
         "rtsp://10.50.13.241/1/h264major",
         "rtsp://10.50.13.242/1/h264major",
         "rtsp://10.50.13.243/1/h264major",
@@ -43,11 +52,9 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(|children| {
-            children.with_exec(|ctx| {
-                async {
-                    spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); }};
-                    loop {}
-                }
+            children.with_exec(|ctx| async {
+                blocking! { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); };
+                loop {}
             })
         });
     }
@@ -180,12 +187,7 @@ fn callback(
         gst::FlowError::Error
     })?;
 
-    println!(
-        "{} - {}: {:?}",
-        url,
-        screen_type,
-        std::time::Instant::now()
-    );
+    println!("{} - {}: {:?}", url, screen_type, std::time::Instant::now());
 
     Ok(gst::FlowSuccess::Ok)
 }
