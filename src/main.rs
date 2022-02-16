@@ -91,13 +91,19 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url.clone(), "fullscreen"))
+            .new_sample(move |appsink| {
+                let url = url.clone();
+                callback(appsink, url, "fullscreen")
+            })
             .build(),
     );
 
     appsink2.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url.clone(), "thumbnail"))
+            .new_sample(move |appsink| {
+                let url = url.clone();
+                callback(appsink, url, "thumbnail")
+            })
             .build(),
     );
 
