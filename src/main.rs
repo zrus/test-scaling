@@ -89,17 +89,17 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         .downcast::<gst_app::AppSink>()
         .expect("Sink element was expected to be an appsink");
 
-    let url1 = url.clone();
+    let url1 = url.to_owned();
     appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url1, "fullscreen"))
+            .new_sample(move |appsink| callback(appsink, &url1, "fullscreen"))
             .build(),
     );
 
-    let url2 = url.clone();
+    let url2 = url.to_owned();
     appsink2.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url2, "thumbnail"))
+            .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
             .build(),
     );
 
