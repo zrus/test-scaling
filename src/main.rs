@@ -127,7 +127,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         ],
     );
     // capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
-    capsfilter.set_property_from_str("caps", &caps);
+    capsfilter.set_property("caps", &caps);
     videorate.link(&capsfilter)?;
     // videorate.link_filtered(
     //     &videorate,
