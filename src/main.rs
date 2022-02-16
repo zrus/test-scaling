@@ -259,7 +259,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // );
     // println!("24");
 
-    println!("{:?}", pipeline);
+    println!("{:?}", pipeline.try_into::<String>());
 
     Ok(pipeline)
 }
