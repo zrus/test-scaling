@@ -53,7 +53,8 @@ fn main() {
     for url in cam_list {
         Bastion::children(|children| {
             children.with_exec(|ctx| async {
-                blocking! { create_pipeline(String::from(url)).and_then(|pipeline| main_loop(pipeline, url)); };
+                let url = String::from(url);
+                blocking! { create_pipeline(&url).and_then(|pipeline| main_loop(pipeline, url)); };
                 loop {}
             })
         });
@@ -62,7 +63,7 @@ fn main() {
     Bastion::block_until_stopped();
 }
 
-fn create_pipeline(url: String) -> Result<gst::Pipeline, Error> {
+fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     println!("Pipeline {}", url);
     gst::init()?;
 
@@ -96,14 +97,14 @@ fn create_pipeline(url: String) -> Result<gst::Pipeline, Error> {
         .downcast::<gst_app::AppSink>()
         .expect("Sink element was expected to be an appsink");
 
-    let url1 = url.clone();
+    let url1 = url.to_owned();
     appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
             .new_sample(move |appsink| callback(appsink, &url1, "fullscreen"))
             .build(),
     );
 
-    let url2 = url.clone();
+    let url2 = url.to_owned();
     appsink2.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
             .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
