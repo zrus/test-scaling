@@ -44,8 +44,10 @@ fn main() {
     for url in cam_list {
         Bastion::children(|children| {
             children.with_exec(|ctx| {
-                spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); }};
-                loop {}
+                async {
+                    spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); }};
+                    loop {}
+                }
             })
         });
     }
@@ -89,13 +91,13 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url.to_owned(), "fullscreen"))
+            .new_sample(move |appsink| callback(appsink, url.clone(), "fullscreen"))
             .build(),
     );
 
     appsink2.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url.to_owned(), "thumbnail"))
+            .new_sample(move |appsink| callback(appsink, url.clone(), "thumbnail"))
             .build(),
     );
 
@@ -144,7 +146,7 @@ fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
 
 fn callback(
     appsink: &AppSink,
-    url: String,
+    url: &str,
     screen_type: &str,
 ) -> Result<gst::FlowSuccess, gst::FlowError> {
     let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
