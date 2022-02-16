@@ -45,6 +45,7 @@ fn main() {
         Bastion::children(|children| {
             children.with_exec(|ctx| {
                 spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); }}
+                loop {}
             })
         });
     }
@@ -57,7 +58,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     gst::init()?;
 
     let pipeline = gst::parse_launch(&format!(
-        "rtspsrc location=rtsp://10.50.13.240/1/h264major !
+        "rtspsrc location={} !
         application/x-rtp, media=video, encoding-name=H264!
         rtph264depay ! queue leaky=2 !
         h264parse ! tee name=thumbnail_video !
@@ -88,13 +89,13 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url, "fullscreen"))
+            .new_sample(move |appsink| callback(appsink, url, "fullscreen".to_owned()))
             .build(),
     );
 
     appsink2.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, url, "thumbnail"))
+            .new_sample(move |appsink| callback(appsink, url, "thumbnail".to_owned()))
             .build(),
     );
 
@@ -144,7 +145,7 @@ fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
 fn callback(
     appsink: &AppSink,
     url: &str,
-    screen_type: &str,
+    screen_type: String,
 ) -> Result<gst::FlowSuccess, gst::FlowError> {
     let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
 
@@ -175,7 +176,12 @@ fn callback(
         gst::FlowError::Error
     })?;
 
-    println!("{} - {}: {}", url, screen_type, samples[0..9]);
+    println!(
+        "{} - {}: {}",
+        url,
+        screen_type,
+        std::time::SystemTime::now().elapsed().unwrap().as_secs()
+    );
 
     Ok(gst::FlowSuccess::Ok)
 }
