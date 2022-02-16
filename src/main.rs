@@ -259,7 +259,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // );
     // println!("24");
 
-    let pl_str: String = pipeline.try_into();
+    let pl_str: String = pipeline.try_into().expect("cannot parse to string");
     println!("{:?}", pl_str);
 
     Ok(pipeline)
