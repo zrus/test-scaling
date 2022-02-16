@@ -7,11 +7,12 @@ use derive_more::{Display, Error};
 use fast_image_resize as fr;
 use gst::{
     element_error, glib,
-    prelude::{Cast, ElementExt, GstBinExt, GstObjectExt},
+    prelude::{Cast, ElementExt, GstBinExt, GstObjectExt, ObjectExt, GstBinExtManual, PadExt, GObjectExtManualGst},
 };
 use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
+use gstreamer_video as gst_video;
 use image::{self, ColorType, ImageFormat};
 
 #[derive(Debug, Display, Error)]
@@ -26,25 +27,25 @@ struct ErrorMessage {
 fn main() {
     let cam_list = vec![
         "rtsp://10.50.31.171/1/h264major",
-        "rtsp://10.50.13.231/1/h264major",
-        "rtsp://10.50.13.233/1/h264major",
-        "rtsp://10.50.13.234/1/h264major",
-        "rtsp://10.50.13.235/1/h264major",
-        "rtsp://10.50.13.236/1/h264major",
-        "rtsp://10.50.13.237/1/h264major",
-        "rtsp://10.50.13.238/1/h264major",
-        "rtsp://10.50.13.239/1/h264major",
-        "rtsp://10.50.13.240/1/h264major",
-        "rtsp://10.50.13.241/1/h264major",
-        "rtsp://10.50.13.242/1/h264major",
-        "rtsp://10.50.13.243/1/h264major",
-        "rtsp://10.50.13.244/1/h264major",
-        "rtsp://10.50.13.245/1/h264major",
-        "rtsp://10.50.13.248/1/h264major",
-        "rtsp://10.50.13.249/1/h264major",
-        "rtsp://10.50.13.252/1/h264major",
-        "rtsp://10.50.13.253/1/h264major",
-        "rtsp://10.50.13.254/1/h264major",
+        // "rtsp://10.50.13.231/1/h264major",
+        // "rtsp://10.50.13.233/1/h264major",
+        // "rtsp://10.50.13.234/1/h264major",
+        // "rtsp://10.50.13.235/1/h264major",
+        // "rtsp://10.50.13.236/1/h264major",
+        // "rtsp://10.50.13.237/1/h264major",
+        // "rtsp://10.50.13.238/1/h264major",
+        // "rtsp://10.50.13.239/1/h264major",
+        // "rtsp://10.50.13.240/1/h264major",
+        // "rtsp://10.50.13.241/1/h264major",
+        // "rtsp://10.50.13.242/1/h264major",
+        // "rtsp://10.50.13.243/1/h264major",
+        // "rtsp://10.50.13.244/1/h264major",
+        // "rtsp://10.50.13.245/1/h264major",
+        // "rtsp://10.50.13.248/1/h264major",
+        // "rtsp://10.50.13.249/1/h264major",
+        // "rtsp://10.50.13.252/1/h264major",
+        // "rtsp://10.50.13.253/1/h264major",
+        // "rtsp://10.50.13.254/1/h264major",
     ];
 
     Bastion::init();
@@ -66,23 +67,118 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     println!("Pipeline {}", url);
     gst::init()?;
 
-    let pipeline = gst::parse_launch(&format!(
-        "rtspsrc location={} !
-        application/x-rtp, media=video, encoding-name=H264!
-        rtph264depay ! queue leaky=2 !
-        h264parse ! tee name=thumbnail_video !
-        queue leaky=2 ! vaapih264dec !
-        videorate ! video/x-raw, framerate=5/1 !
-        vaapipostproc ! vaapijpegenc !
-        appsink name=app1 max-buffers=100 emit-signals=false drop=true
-        thumbnail_video. ! queue leaky=2 ! vaapih264dec !
-        videorate ! video/x-raw, framerate=5/1 !
-        vaapipostproc ! video/x-raw, width=720, height=480 ! vaapijpegenc !
-        appsink name=app2 max-buffers=100 emit-signals=false drop=true",
-        url
-    ))?
-    .downcast::<gst::Pipeline>()
-    .expect("Expected Gst Pipeline");
+    // Initialize new raw pipeline
+    let pipeline = gst::Pipeline::new(None);
+    // Initialize RTSP source
+    let src = gst::ElementFactory::make("rtspsrc", None)?;
+    src.set_property("location", url);
+    // Initialize rtph264depay
+    let rtph264depay = gst::ElementFactory::make("rtph264depay", None)?;
+    src.link(&rtph264depay);
+    let rtph264depay_weak = rtph264depay.downgrade();
+    src.connect_pad_added(move |_, src_pad| {
+        let rtph264depay = match rtph264depay_weak.upgrade() {
+            Some(depay) => depay,
+            None => return,
+        };
+        let sink_pad = rtph264depay.static_pad("sink").expect("rtph264depay has no sink pad");
+        if sink_pad.is_linked() {
+            return;
+        }
+        src_pad.link(sink_pad);
+    });
+    // Initialize queue 1
+    let queue1 = gst::ElementFactory::make("queue", None).unwrap();
+    queue1.set_property("leaky", 2);
+    rtph264depay.link(&queue1)?;
+    // Initialize h264parse
+    let h264parse = gst::ElementFactory::make("h264parse", None)?;
+    queue1.link(&h264parse)?;
+    // Initialize queue 2
+    let queue2 = gst::ElementFactory::make("queue", None).unwrap();
+    queue2.set_property("leaky", 2);
+    h264parse.link(&queue2)?;
+    // Initialize vaapih264dec
+    let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)?;
+    queue2.link(&vaapih264dec)?;
+    // Initialize videorate
+    let videorate = gst::ElementFactory::make("videorate", None)?;
+    vaapih264dec.link(&videorate)?;
+    // Initialize capsfilter for videorate
+    let capsfilter = gst::ElementFactory::make("capsfilter", None)?;
+    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    videorate.link(&capsfilter)?;
+    // Initialize vaapipostproc
+    let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
+    capsfilter.link(&vaapipostproc)?;
+    // Initialize vaapijpegenc
+    let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
+    vaapipostproc.link(&vaapijpegenc)?;
+    // Initialize appsink 1
+    let sink1 = gst::ElementFactory::make("appsink", None)?;
+    sink1.set_property("name", "app1");
+    sink1.set_property("max-buffers", 100);
+    sink1.set_property("emit-signals", false);
+    sink1.set_property("drop", true);
+    vaapijpegenc.link(&sink1)?;
+
+    //! THUMNAIL
+    // Initialize tee
+    let tee = gst::ElementFactory::make("tee", None)?;
+    tee.set_property("name", "thumbnail");
+    h264parse.link(tee)?;
+    // Initialize queue 2
+    let queue3 = gst::ElementFactory::make("queue", None).unwrap();
+    queue3.set_property("leaky", 2);
+    tee.link(&queue3)?;
+    // Initialize vaapih264dec
+    let vaapih264dec1 = gst::ElementFactory::make("vaapih264dec", None)?;
+    queue3.link(&vaapih264dec1)?;
+    // Initialize videorate
+    let videorate1 = gst::ElementFactory::make("videorate", None)?;
+    vaapih264dec1.link(&videorate1)?;
+    // Initialize capsfilter for videorate
+    let capsfilter1 = gst::ElementFactory::make("capsfilter", None)?;
+    capsfilter1.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    videorate1.link(&capsfilter1)?;
+    // Initialize vaapipostproc
+    let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
+    capsfilter1.link(&vaapipostproc1)?;
+    vaapipostproc1.set_property("width",720);
+    vaapipostproc1.set_property("height",480);
+    // Initialize vaapijpegenc
+    let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
+    vaapipostproc1.link(&vaapijpegenc1)?;
+    // Initialize AppSink 2
+    let sink2 = gst::ElementFactory::make("appsink", None)?;
+    sink2.set_property("name", "app2");
+    sink2.set_property("max-buffers", 100);
+    sink2.set_property("emit-signals", false);
+    sink2.set_property("drop", true);
+    vaapijpegenc1.link(&sink2)?;
+
+    //! ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
+    // let elements = &[&src, &rtph264depay, &sink1, &sink2];
+    // pipeline.add_many(elements);
+    // gst::Element::link_many(elements);
+
+    // let pipeline = gst::parse_launch(&format!(
+    //     "rtspsrc location={} !
+    //     application/x-rtp, media=video, encoding-name=H264!
+    //     rtph264depay ! queue leaky=2 !
+    //     h264parse ! tee name=thumbnail_video !
+    //     queue leaky=2 ! vaapih264dec !
+    //     videorate ! video/x-raw, framerate=5/1 !
+    //     vaapipostproc ! vaapijpegenc !
+    //     appsink name=app1 max-buffers=100 emit-signals=false drop=true
+    //     thumbnail_video. ! queue leaky=2 ! vaapih264dec !
+    //     videorate ! video/x-raw, framerate=5/1 !
+    //     vaapipostproc ! video/x-raw, width=720, height=480 ! vaapijpegenc !
+    //     appsink name=app2 max-buffers=100 emit-signals=false drop=true",
+    //     url
+    // ))?
+    // .downcast::<gst::Pipeline>()
+    // .expect("Expected Gst Pipeline");
 
     let appsink1 = pipeline
         .by_name("app1")
