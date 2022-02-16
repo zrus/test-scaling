@@ -52,8 +52,8 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(|children| {
-            children.with_exec(move |ctx| async {
-                blocking! { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); };
+            children.with_exec(|ctx| async {
+                spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); } };
                 loop {}
             })
         });
