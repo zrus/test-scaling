@@ -94,14 +94,14 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     });
     // Initialize queue 1
     let queue1 = gst::ElementFactory::make("queue", None).unwrap();
-    queue1.set_property("leaky", 2);
+    queue1.set_property("leaky", "2");
     rtph264depay.link(&queue1)?;
     // Initialize h264parse
     let h264parse = gst::ElementFactory::make("h264parse", None)?;
     queue1.link(&h264parse)?;
     // Initialize queue 2
     let queue2 = gst::ElementFactory::make("queue", None).unwrap();
-    queue2.set_property("leaky", 2);
+    queue2.set_property("leaky", "2");
     h264parse.link(&queue2)?;
     // Initialize vaapih264dec
     let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)?;
@@ -122,7 +122,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
     sink1.set_property("name", "app1");
-    sink1.set_property("max-buffers", 100);
+    sink1.set_property("max-buffers", "100");
     sink1.set_property("emit-signals", false);
     sink1.set_property("drop", true);
     vaapijpegenc.link(&sink1)?;
@@ -134,7 +134,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     h264parse.link(&tee)?;
     // Initialize queue 2
     let queue3 = gst::ElementFactory::make("queue", None).unwrap();
-    queue3.set_property("leaky", 2);
+    queue3.set_property("leaky", "2");
     tee.link(&queue3)?;
     // Initialize vaapih264dec
     let vaapih264dec1 = gst::ElementFactory::make("vaapih264dec", None)?;
@@ -149,15 +149,15 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
     capsfilter1.link(&vaapipostproc1)?;
-    vaapipostproc1.set_property("width", 720);
-    vaapipostproc1.set_property("height", 480);
+    vaapipostproc1.set_property("width", "720");
+    vaapipostproc1.set_property("height", "480");
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
     // Initialize AppSink 2
     let sink2 = gst::ElementFactory::make("appsink", None)?;
     sink2.set_property("name", "app2");
-    sink2.set_property("max-buffers", 100);
+    sink2.set_property("max-buffers", "100");
     sink2.set_property("emit-signals", false);
     sink2.set_property("drop", true);
     vaapijpegenc1.link(&sink2)?;
