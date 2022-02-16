@@ -7,7 +7,10 @@ use derive_more::{Display, Error};
 use fast_image_resize as fr;
 use gst::{
     element_error, glib,
-    prelude::{Cast, ElementExt, GstBinExt, GstObjectExt, ObjectExt, GstBinExtManual, PadExt, GObjectExtManualGst},
+    prelude::{
+        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
+        PadExt,
+    },
 };
 use gst_app::AppSink;
 use gstreamer as gst;
@@ -81,7 +84,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             Some(depay) => depay,
             None => return,
         };
-        let sink_pad = rtph264depay.static_pad("sink").expect("rtph264depay has no sink pad");
+        let sink_pad = rtph264depay
+            .static_pad("sink")
+            .expect("rtph264depay has no sink pad");
         if sink_pad.is_linked() {
             return;
         }
@@ -122,7 +127,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     sink1.set_property("drop", true);
     vaapijpegenc.link(&sink1)?;
 
-    //! THUMNAIL
+    // THUMNAIL
     // Initialize tee
     let tee = gst::ElementFactory::make("tee", None)?;
     tee.set_property("name", "thumbnail");
@@ -144,8 +149,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
     capsfilter1.link(&vaapipostproc1)?;
-    vaapipostproc1.set_property("width",720);
-    vaapipostproc1.set_property("height",480);
+    vaapipostproc1.set_property("width", 720);
+    vaapipostproc1.set_property("height", 480);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
@@ -157,9 +162,29 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     sink2.set_property("drop", true);
     vaapijpegenc1.link(&sink2)?;
 
-    //! ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
-    // let elements = &[&src, &rtph264depay, &sink1, &sink2];
-    // pipeline.add_many(elements);
+    // ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
+    let elements = &[
+        &src,
+        &rtph264depay,
+        &queue1,
+        &h264parse,
+        &queue2,
+        &vaapih264dec,
+        &videorate,
+        &capsfilter,
+        &vaapipostproc,
+        &vaapijpegenc,
+        &sink1,
+        &tee,
+        &queue3,
+        &vaapih264dec1,
+        &videorate1,
+        &capsfilter1,
+        &vaapipostproc1,
+        &vaapijpegenc1,
+        &sink2,
+    ];
+    pipeline.add_many(elements);
     // gst::Element::link_many(elements);
 
     // let pipeline = gst::parse_launch(&format!(
@@ -179,6 +204,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // ))?
     // .downcast::<gst::Pipeline>()
     // .expect("Expected Gst Pipeline");
+
+    let capfilter = pipeline
+        .by_name("capsfilter")?
+        .downcast::<gst::Caps>()?;
 
     let appsink1 = pipeline
         .by_name("app1")
