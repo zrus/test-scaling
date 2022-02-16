@@ -149,8 +149,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
     capsfilter1.link(&vaapipostproc1)?;
-    vaapipostproc1.set_property("width", "720");
-    vaapipostproc1.set_property("height", "480");
+    vaapipostproc1.set_property_from_str("width", "720");
+    vaapipostproc1.set_property_from_str("height", "480");
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
