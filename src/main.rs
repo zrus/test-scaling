@@ -118,7 +118,16 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     println!("7");
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", None)?;
-    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    let caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[
+            ("width", &720),
+            ("height", &480),
+            ("framerate", &gst::Fraction::new(5, 1)),
+        ],
+    );
+    // capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    capsfilter.set_property_from_str("caps", &caps);
     videorate.link(&capsfilter)?;
     // videorate.link_filtered(
     //     &videorate,
@@ -136,9 +145,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
     sink1.set_property_from_str("name", "app1");
-    sink1.set_property_from_str("max-buffers", "100");
-    sink1.set_property_from_str("emit-signals", "false");
-    sink1.set_property_from_str("drop", "true");
+    // sink1.set_property_from_str("max-buffers", "100");
+    // sink1.set_property_from_str("emit-signals", "false");
+    // sink1.set_property_from_str("drop", "true");
     vaapijpegenc.link(&sink1)?;
     println!("11");
 
@@ -258,9 +267,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     //         .build(),
     // );
     // println!("24");
-
-    let pl_str: String = pipeline.try_into().expect("cannot parse to string");
-    println!("{:?}", pl_str);
 
     Ok(pipeline)
 }
