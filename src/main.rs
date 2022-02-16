@@ -181,7 +181,7 @@ fn callback(
     })?;
 
     println!(
-        "{} - {}: {}",
+        "{} - {}: {:?}",
         url,
         screen_type,
         std::time::Instant::now()
