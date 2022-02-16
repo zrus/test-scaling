@@ -9,6 +9,7 @@ use gst::{
     element_error, glib,
     prelude::{Cast, ElementExt, GstBinExt, GstObjectExt},
 };
+use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 use image::{self, ColorType, ImageFormat};
@@ -24,21 +25,17 @@ struct ErrorMessage {
 
 fn main() {
     let cam_list = vec![
-        "rtsp://10.50.31.171/1/h264major",
-        "rtsp://10.50.31.172/1/h264major",
-        "rtsp://10.50.13.231/1/h264major",
-        "rtsp://10.50.13.233/1/h264major",
-        "rtsp://10.50.13.234/1/h264major",
-        "rtsp://10.50.13.235/1/h264major",
-        "rtsp://10.50.13.236/1/h264major",
-        "rtsp://10.50.13.237/1/h264major",
-        "rtsp://10.50.13.240/1/h264major",
+        // "rtsp://10.50.13.240/1/h264major",
         "rtsp://10.50.13.241/1/h264major",
+        "rtsp://10.50.13.242/1/h264major",
         "rtsp://10.50.13.243/1/h264major",
         "rtsp://10.50.13.244/1/h264major",
         "rtsp://10.50.13.245/1/h264major",
         "rtsp://10.50.13.248/1/h264major",
         "rtsp://10.50.13.249/1/h264major",
+        "rtsp://10.50.13.252/1/h264major",
+        "rtsp://10.50.13.253/1/h264major",
+        "rtsp://10.50.13.254/1/h264major",
     ];
 
     Bastion::init();
@@ -60,99 +57,44 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     gst::init()?;
 
     let pipeline = gst::parse_launch(&format!(
-        "rtspsrc location={} !
+        "rtspsrc location=rtsp://10.50.13.240/1/h264major !
+        application/x-rtp, media=video, encoding-name=H264!
         rtph264depay ! queue leaky=2 !
-        h264parse ! queue leaky=2 !
-        vaapih264dec ! videorate ! video/x-raw,framerate=5/1 !
+        h264parse ! tee name=thumbnail_video !
+        queue leaky=2 ! vaapih264dec !
+        videorate ! video/x-raw, framerate=5/1 !
         vaapipostproc ! vaapijpegenc !
-        appsink name=sink max-buffers=100 emit-signals=false drop=true",
+        appsink name=app1 max-buffers=100 emit-signals=false drop=true
+        thumbnail_video. ! queue leaky=2 ! vaapih264dec !
+        videorate ! video/x-raw, framerate=5/1 !
+        vaapipostproc ! video/x-raw, width=720, height=480 ! vaapijpegenc !
+        appsink name=app2 max-buffers=100 emit-signals=false drop=true",
         url
     ))?
     .downcast::<gst::Pipeline>()
     .expect("Expected Gst Pipeline");
 
-    let appsink = pipeline
-        .by_name("sink")
+    let appsink1 = pipeline
+        .by_name("app1")
         .expect("Sink element not found")
         .downcast::<gst_app::AppSink>()
         .expect("Sink element was expected to be an appsink");
 
-    appsink.set_callbacks(
+    let appsink2 = pipeline
+        .by_name("app1")
+        .expect("Sink element not found")
+        .downcast::<gst_app::AppSink>()
+        .expect("Sink element was expected to be an appsink");
+
+    appsink1.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| {
-                let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
+            .new_sample(move |appsink| callback(appsink, url, "fullscreen"))
+            .build(),
+    );
 
-                let buffer = sample.buffer().ok_or_else(|| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to get buffer from appsink")
-                    );
-                    gst::FlowError::Error
-                })?;
-
-                let map = buffer.map_readable().map_err(|_| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to map buffer readable")
-                    );
-                    gst::FlowError::Error
-                })?;
-
-                let samples = map.as_slice_of::<u8>().map_err(|_| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to interprete buffer as S16 PCM")
-                    );
-                    gst::FlowError::Error
-                })?;
-
-                let image = image::load_from_memory_with_format(samples, ImageFormat::Jpeg);
-                match image {
-                    Ok(image) => {
-                        let width = NonZeroU32::new(image.width()).unwrap();
-                        let height = NonZeroU32::new(image.height()).unwrap();
-
-                        let src_image = fr::Image::from_vec_u8(
-                            width,
-                            height,
-                            image.to_rgb8().into_raw(),
-                            fr::PixelType::U8x3,
-                        )
-                        .unwrap();
-
-                        let dst_width = NonZeroU32::new(720).unwrap();
-                        let dst_height = NonZeroU32::new(480).unwrap();
-
-                        let mut dst_image =
-                            fr::Image::new(dst_width, dst_height, src_image.pixel_type());
-
-                        let mut dst_view = dst_image.view_mut();
-
-                        let mut resizer =
-                            fr::Resizer::new(fr::ResizeAlg::Convolution(fr::FilterType::Box));
-
-                        resizer.resize(&src_image.view(), &mut dst_view).unwrap();
-
-                        let mut result_buf = BufWriter::new(Vec::new());
-                        image::codecs::jpeg::JpegEncoder::new(&mut result_buf)
-                            .encode(
-                                dst_image.buffer(),
-                                dst_width.get(),
-                                dst_height.get(),
-                                ColorType::Rgb8,
-                            )
-                            .unwrap();
-
-                        Vec::from(result_buf.into_inner().unwrap())
-                    }
-                    Err(_) => unreachable!(),
-                };
-
-                Ok(gst::FlowSuccess::Ok)
-            })
+    appsink2.set_callbacks(
+        gst_app::AppSinkCallbacks::builder()
+            .new_sample(move |appsink| callback(appsink, url, "thumbnail"))
             .build(),
     );
 
@@ -197,4 +139,43 @@ fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
     pipeline.set_state(gst::State::Null)?;
 
     Ok(())
+}
+
+fn callback(
+    appsink: &AppSink,
+    url: &str,
+    screen_type: &str,
+) -> Result<gst::FlowSuccess, gst::FlowError> {
+    let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
+
+    let buffer = sample.buffer().ok_or_else(|| {
+        element_error!(
+            appsink,
+            gst::ResourceError::Failed,
+            ("Failed to get buffer from appsink")
+        );
+        gst::FlowError::Error
+    })?;
+
+    let map = buffer.map_readable().map_err(|_| {
+        element_error!(
+            appsink,
+            gst::ResourceError::Failed,
+            ("Failed to map buffer readable")
+        );
+        gst::FlowError::Error
+    })?;
+
+    let samples = map.as_slice_of::<u8>().map_err(|_| {
+        element_error!(
+            appsink,
+            gst::ResourceError::Failed,
+            ("Failed to interprete buffer as S16 PCM")
+        );
+        gst::FlowError::Error
+    })?;
+
+    println!("{} - {}: {}", url, screen_type, samples[0..9]);
+
+    Ok(gst::FlowSuccess::Ok)
 }
