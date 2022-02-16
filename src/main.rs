@@ -259,6 +259,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // );
     // println!("24");
 
+    println!("{:?}", pipeline);
+
     Ok(pipeline)
 }
 
