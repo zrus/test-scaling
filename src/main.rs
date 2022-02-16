@@ -184,7 +184,7 @@ fn callback(
         "{} - {}: {}",
         url,
         screen_type,
-        std::time::SystemTime::now().elapsed().unwrap().as_secs()
+        std::time::Instant::now()
     );
 
     Ok(gst::FlowSuccess::Ok)
