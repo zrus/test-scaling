@@ -205,12 +205,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // .downcast::<gst::Pipeline>()
     // .expect("Expected Gst Pipeline");
 
-    let capfilter = pipeline
-        .by_name("capsfilter")
-        .expect("")
-        .downcast::<gst::Caps>()
-        .expect("");
-
     let appsink1 = pipeline
         .by_name("app1")
         .expect("Sink element not found")
