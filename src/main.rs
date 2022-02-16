@@ -90,7 +90,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         if sink_pad.is_linked() {
             return;
         }
-        src_pad.link(sink_pad);
+        src_pad.link(&sink_pad);
     });
     // Initialize queue 1
     let queue1 = gst::ElementFactory::make("queue", None).unwrap();
@@ -131,7 +131,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize tee
     let tee = gst::ElementFactory::make("tee", None)?;
     tee.set_property("name", "thumbnail");
-    h264parse.link(tee)?;
+    h264parse.link(&tee)?;
     // Initialize queue 2
     let queue3 = gst::ElementFactory::make("queue", None).unwrap();
     queue3.set_property("leaky", 2);
@@ -206,8 +206,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // .expect("Expected Gst Pipeline");
 
     let capfilter = pipeline
-        .by_name("capsfilter")?
-        .downcast::<gst::Caps>()?;
+        .by_name("capsfilter")
+        .expect("")
+        .downcast::<gst::Caps>()
+        .expect("");
 
     let appsink1 = pipeline
         .by_name("app1")
