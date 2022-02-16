@@ -212,7 +212,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         .expect("Sink element was expected to be an appsink");
 
     let appsink2 = pipeline
-        .by_name("app1")
+        .by_name("app2")
         .expect("Sink element not found")
         .downcast::<gst_app::AppSink>()
         .expect("Sink element was expected to be an appsink");
