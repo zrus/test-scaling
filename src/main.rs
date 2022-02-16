@@ -231,6 +231,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
+    println!("Pipeline created!");
+
     Ok(pipeline)
 }
 
