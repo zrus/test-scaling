@@ -98,9 +98,9 @@ fn main() {
                                         None => return
                                     };
                                     main_loop(pipeline);
-                                }}
+                                }};
                             })
-                            .on_tell(move |fps: u8, _| {
+                            .on_tell(move |fps: i32, _| {
                                 let pipeline = match pl_weak.upgrade() {
                                     Some(pl) => pl,
                                     None => return,
@@ -112,7 +112,7 @@ fn main() {
                                     .expect("cannot downcast caps to element");
                                 let new_caps = gst::Caps::new_simple(
                                     "video/x-raw",
-                                    &[("framerate", gst::Fraction::new(fps, 1))],
+                                    &[("framerate", &gst::Fraction::new(fps, 1))],
                                 );
                                 capsfilter.set_property("caps", &new_caps);
                             });
