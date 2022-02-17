@@ -88,7 +88,7 @@ fn main() {
                 loop {
                     let pl_weak = pipeline.downgrade();
                     MessageHandler::new(ctx.recv().await?).on_tell(move |message: &str, _| {
-                        spawn! { async {
+                        spawn! { async move {
                             let pipeline = match pl_weak.upgrade() {
                                 Some(pl) => pl,
                                 None => return
