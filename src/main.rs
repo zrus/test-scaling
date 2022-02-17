@@ -80,6 +80,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let queue1 = gst::ElementFactory::make("queue", Some("queue1")).unwrap();
     // Initialize h264parse
     let h264parse = gst::ElementFactory::make("h264parse", None)?;
+    // Initialize tee
+    let tee = gst::ElementFactory::make("tee", Some("tee"))?;
     // Initialize queue 2
     let queue2 = gst::ElementFactory::make("queue", Some("queue2")).unwrap();
     // Initialize vaapih264dec
@@ -94,67 +96,41 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
+    // Initialize queue 2
+    let queue3 = gst::ElementFactory::make("queue", Some("queue3")).unwrap();
+    // Initialize vaapih264dec
+    let vaapih264dec1 = gst::ElementFactory::make("vaapih264dec", None)?;
+    // Initialize videorate
+    let videorate1 = gst::ElementFactory::make("videorate", None)?;
+    // Initialize capsfilter for videorate
+    let capsfilter1 = gst::ElementFactory::make("capsfilter", None)?;
+    // Initialize vaapipostproc
+    let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
+    // Initialize vaapijpegenc
+    let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
+    // Initialize AppSink 2
+    let sink2 = gst::ElementFactory::make("appsink", None)?;
 
+    // FULLSCREEN
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    let caps = gst::Caps::new_simple(
-        "video/x-raw",
-        &[
-            // ("width", &720),
-            // ("height", &480),
-            ("framerate", &gst::Fraction::new(5, 1)),
-        ],
-    );
-    // capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
-    capsfilter.set_property("caps", &caps);
+    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
     sink1.set_property_from_str("name", "app1");
     sink1.set_property_from_str("max-buffers", "100");
     sink1.set_property_from_str("emit-signals", "false");
     sink1.set_property_from_str("drop", "true");
 
-    // // THUMNAIL
-    // // Initialize tee
-    // let tee = gst::ElementFactory::make("tee", None)?;
-    // tee.set_property("name", "thumbnail");
-    // h264parse.link(&tee)?;
-    // println!("12");
-    // // Initialize queue 2
-    // let queue3 = gst::ElementFactory::make("queue", None).unwrap();
-    // queue3.set_property_from_str("leaky", "downstream");
-    // tee.link(&queue3)?;
-    // println!("13");
-    // // Initialize vaapih264dec
-    // let vaapih264dec1 = gst::ElementFactory::make("vaapih264dec", None)?;
-    // queue3.link(&vaapih264dec1)?;
-    // println!("14");
-    // // Initialize videorate
-    // let videorate1 = gst::ElementFactory::make("videorate", None)?;
-    // vaapih264dec1.link(&videorate1)?;
-    // println!("15");
-    // // Initialize capsfilter for videorate
-    // let capsfilter1 = gst::ElementFactory::make("capsfilter", None)?;
-    // capsfilter1.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
-    // videorate1.link(&capsfilter1)?;
-    // println!("16");
-    // // Initialize vaapipostproc
-    // let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
-    // capsfilter1.link(&vaapipostproc1)?;
-    // vaapipostproc1.set_property_from_str("width", "720");
-    // vaapipostproc1.set_property_from_str("height", "480");
-    // println!("17");
-    // // Initialize vaapijpegenc
-    // let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
-    // vaapipostproc1.link(&vaapijpegenc1)?;
-    // println!("18");
-    // // Initialize AppSink 2
-    // let sink2 = gst::ElementFactory::make("appsink", None)?;
-    // sink2.set_property_from_str("name", "app2");
-    // sink2.set_property_from_str("max-buffers", "100");
-    // sink2.set_property_from_str("emit-signals", "false");
-    // sink2.set_property_from_str("drop", "true");
-    // vaapijpegenc1.link(&sink2)?;
-    // println!("19");
+    // THUMNAIL
+    tee.set_property("name", "thumbnail");
+    queue3.set_property_from_str("leaky", "downstream");
+    capsfilter1.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    vaapipostproc1.set_property_from_str("width", "720");
+    vaapipostproc1.set_property_from_str("height", "480");
+    sink2.set_property_from_str("name", "app2");
+    sink2.set_property_from_str("max-buffers", "100");
+    sink2.set_property_from_str("emit-signals", "false");
+    sink2.set_property_from_str("drop", "true");
 
     // ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
     let elements = &[
@@ -162,6 +138,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &rtph264depay,
         &queue1,
         &h264parse,
+        &tee,
         &queue2,
         &vaapih264dec,
         &videorate,
@@ -169,14 +146,13 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &vaapipostproc,
         &vaapijpegenc,
         &sink1,
-        // &tee,
-        // &queue3,
-        // &vaapih264dec1,
-        // &videorate1,
-        // &capsfilter1,
-        // &vaapipostproc1,
-        // &vaapijpegenc1,
-        // &sink2,
+        &queue3,
+        &vaapih264dec1,
+        &videorate1,
+        &capsfilter1,
+        &vaapipostproc1,
+        &vaapijpegenc1,
+        &sink2,
     ];
     pipeline.add_many(elements);
 
@@ -201,17 +177,28 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue2.link(&vaapih264dec)?;
     vaapih264dec.link(&videorate)?;
     videorate.link(&capsfilter)?;
-    capsfilter.link(&vaapipostproc)?;
+    capsfilter.link(&tee)?;
+    tee.link(&vaapipostproc)?;
     vaapipostproc.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
+
+    // h264parse.link(&tee)?;
+    // tee.link(&queue3)?;
+    // queue3.link(&vaapih264dec1)?;
+    // vaapih264dec1.link(&videorate1)?;
+    // videorate1.link(&capsfilter1)?;
+    // capsfilter1.link(&vaapipostproc1)?;
+    tee.link(&vaapipostproc1)?;
+    vaapipostproc1.link(&vaapijpegenc1)?;
+    vaapijpegenc1.link(&sink2)?;
 
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
         .expect("Sink element is expected to be an appsink!");
 
-    // let appsink2 = sink
-    // .dynamic_cast::<gst_app::AppSink>()
-    // .expect("Sink element is expected to be an appsink!");
+    let appsink2 = sink2
+        .dynamic_cast::<gst_app::AppSink>()
+        .expect("Sink element is expected to be an appsink!");
 
     let url1 = url.to_owned();
     appsink1.set_callbacks(
@@ -220,13 +207,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    // let url2 = url.to_owned();
-    // appsink2.set_callbacks(
-    //     gst_app::AppSinkCallbacks::builder()
-    //         .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
-    //         .build(),
-    // );
-    // println!("24");
+    let url2 = url.to_owned();
+    appsink2.set_callbacks(
+        gst_app::AppSinkCallbacks::builder()
+            .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
+            .build(),
+    );
 
     Ok(pipeline)
 }
