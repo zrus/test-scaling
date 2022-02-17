@@ -93,6 +93,7 @@ fn main() {
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|_: &str, _| {
                                 let pl_weak = pl_weak.clone();
+                                println!("Start mainloop");
                                 spawn! { async move {
                                     let pipeline = match pl_weak.upgrade() {
                                         Some(pl) => pl,
@@ -102,6 +103,7 @@ fn main() {
                                 }};
                             })
                             .on_tell(|fps: i32, _| {
+                                println!("Change fps");
                                 let pl_weak = pl_weak.clone();
                                 let pipeline = match pl_weak.upgrade() {
                                     Some(pl) => pl,
