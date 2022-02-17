@@ -12,6 +12,36 @@ use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 
+pub struct CustomEvent {
+    pub send_eos: bool,
+}
+
+impl CustomEvent {
+    const EVENT_NAME: &'static str = "example-custom-event";
+
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new(send_eos: bool) -> gst::Event {
+        let s = gst::Structure::builder(Self::EVENT_NAME)
+            .field("send_eos", &send_eos)
+            .build();
+        gst::event::CustomBoth::new(s)
+    }
+
+    pub fn parse(ev: &gst::EventRef) -> Option<CustomEvent> {
+        match ev.view() {
+            gst::EventView::CustomBoth(e) => {
+                let s = match e.structure() {
+                    Some(s) if s.name() == Self::EVENT_NAME => s,
+                    _ => return None,
+                };
+                let send_eos = s.get::<bool>("send_eos").unwrap();
+                Some(CustomEvent { send_eos })
+            }
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Display, Error)]
 #[display(fmt = "Received error from {}: {} (debug: {:?})", src, error, debug)]
 struct ErrorMessage {
@@ -50,11 +80,28 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(|children| {
-            children.with_exec(|_| async {
-                spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)).expect(""); } };
-                loop {}
+            children.with_exec(|ctx| async {
+                let pipeline = match create_pipeline(url) {
+                    Ok(pl) => pl,
+                    Err(_) => return,
+                };
+                loop {
+                    let pl_weak = pipeline.downgrade();
+                    MessageHandler::new(ctx.recv().await?)
+                        .on_tell(move |message: &str, _| {
+                            spawn! { async {
+                                let pipeline = match pl_weak.upgrade() {
+                                    Some(pl) => pl,
+                                    None => return
+                                };
+                                main_loop(pipeline);
+                            }}
+                        })
+                        .on_tell(|fps: u8, _| {});
+                }
             })
-        }).expect("");
+        })
+        .expect("");
     }
 
     Bastion::block_until_stopped();
@@ -192,8 +239,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     Ok(pipeline)
 }
 
-fn main_loop(pipeline: gst::Pipeline, url: &str) -> Result<(), Error> {
-    println!("Start main loop {}", url);
+fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
 
     let bus = pipeline
