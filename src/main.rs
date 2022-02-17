@@ -91,7 +91,8 @@ fn main() {
                     loop {
                         let pl_weak = pipeline.downgrade();
                         MessageHandler::new(ctx.recv().await?)
-                            .on_tell(move |_: &str, _| {
+                            .on_tell(|_: &str, _| {
+                                let pl_weak = pl_weak.clone();
                                 spawn! { async move {
                                     let pipeline = match pl_weak.upgrade() {
                                         Some(pl) => pl,
@@ -100,7 +101,8 @@ fn main() {
                                     main_loop(pipeline);
                                 }};
                             })
-                            .on_tell(move |fps: i32, _| {
+                            .on_tell(|fps: i32, _| {
+                                let pl_weak = pl_weak.clone();
                                 let pipeline = match pl_weak.upgrade() {
                                     Some(pl) => pl,
                                     None => return,
