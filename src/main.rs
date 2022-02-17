@@ -80,27 +80,30 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(move |children| {
-            children.with_exec(move |ctx| async move {
-                let pipeline = match create_pipeline(url) {
-                    Ok(pl) => pl,
-                    Err(_) => return Err(()),
-                };
-                loop {
-                    let pl_weak = pipeline.downgrade();
-                    MessageHandler::new(ctx.recv().await?).on_tell(move |_: &str, _| {
-                        spawn! { async move {
-                            let pipeline = match pl_weak.upgrade() {
-                                Some(pl) => pl,
-                                None => return
-                            };
-                            main_loop(pipeline);
-                        }}
-                    });
-                    // .on_tell(|fps: u8, _| {});
-                }
-            })
+            children
+                .with_distributor(Distributor::named(url))
+                .with_exec(move |ctx| async move {
+                    let pipeline = match create_pipeline(url) {
+                        Ok(pl) => pl,
+                        Err(_) => return Err(()),
+                    };
+                    loop {
+                        let pl_weak = pipeline.downgrade();
+                        MessageHandler::new(ctx.recv().await?).on_tell(move |_: &str, _| {
+                            spawn! { async move {
+                                let pipeline = match pl_weak.upgrade() {
+                                    Some(pl) => pl,
+                                    None => return
+                                };
+                                main_loop(pipeline);
+                            }}
+                        });
+                        // .on_tell(|fps: u8, _| {});
+                    }
+                })
         })
         .expect("");
+        Distributor::named(url).tell_one("start");
     }
 
     Bastion::block_until_stopped();
