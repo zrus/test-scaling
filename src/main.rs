@@ -136,7 +136,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     ];
     pipeline.add_many(elements).expect("");
 
-    src.link(&rtph264depay);
+    let _ = src.link(&rtph264depay);
     let rtph264depay_weak = rtph264depay.downgrade();
     src.connect_pad_added(move |_, src_pad| {
         let rtph264depay = match rtph264depay_weak.upgrade() {
@@ -257,7 +257,7 @@ fn callback(
         gst::FlowError::Error
     })?;
 
-    let samples = map.as_slice_of::<u8>().map_err(|_| {
+    let _samples = map.as_slice_of::<u8>().map_err(|_| {
         element_error!(
             appsink,
             gst::ResourceError::Failed,
