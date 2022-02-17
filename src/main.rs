@@ -80,7 +80,7 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(move |children| {
-            children.with_exec(|ctx| async move {
+            children.with_exec(move |ctx| async move {
                 let pipeline = match create_pipeline(url) {
                     Ok(pl) => pl,
                     Err(_) => return Err(()),
