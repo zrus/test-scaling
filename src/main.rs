@@ -110,7 +110,7 @@ fn main() {
                                     None => return,
                                 };
                                 let capsfilter = pipeline
-                                    .by_name("caps")
+                                    .by_name("caps1")
                                     .expect("cannot get caps element")
                                     .downcast::<gst::Element>()
                                     .expect("cannot downcast caps to element");
@@ -155,7 +155,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize videorate
     let videorate = gst::ElementFactory::make("videorate", None)?;
     // Initialize capsfilter for videorate
-    let capsfilter = gst::ElementFactory::make("capsfilter", None)?;
+    let capsfilter = gst::ElementFactory::make("capsfilter", Some("caps1"))?;
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
@@ -172,7 +172,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    capsfilter.set_property("name", "caps");
     capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
     tee.set_property("name", "thumbnail");
 
