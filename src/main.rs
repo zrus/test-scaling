@@ -73,10 +73,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize new raw pipeline
     let pipeline = gst::Pipeline::new(None);
     // Initialize RTSP source
-    let src = gst::ElementFactory::make("rtspsrc", None)?;
+    let src = gst::ElementFactory::make("rtspsrc", Some("src"))?;
     src.set_property("location", url);
     // Initialize rtph264depay
-    let rtph264depay = gst::ElementFactory::make("rtph264depay", None)?;
+    let rtph264depay = gst::ElementFactory::make("rtph264depay", "depay")?;
     src.link(&rtph264depay);
     println!("1");
     let rtph264depay_weak = rtph264depay.downgrade();
@@ -95,7 +95,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     });
     println!("2");
     // Initialize queue 1
-    let queue1 = gst::ElementFactory::make("queue", None).unwrap();
+    let queue1 = gst::ElementFactory::make("queue", Some("queue1")).unwrap();
     queue1.set_property_from_str("leaky", "downstream");
     rtph264depay.link(&queue1)?;
     println!("3");
@@ -104,7 +104,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue1.link(&h264parse)?;
     println!("4");
     // Initialize queue 2
-    let queue2 = gst::ElementFactory::make("queue", None).unwrap();
+    let queue2 = gst::ElementFactory::make("queue", Some("queue2")).unwrap();
     queue2.set_property_from_str("leaky", "downstream");
     h264parse.link(&queue2)?;
     println!("5");
