@@ -1,22 +1,16 @@
-use std::{io::BufWriter, num::NonZeroU32};
-
 use anyhow::Error;
 use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
-use fast_image_resize as fr;
 use gst::{
     element_error, glib,
     prelude::{
-        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
-        PadExt,
+        Cast, ElementExt, GObjectExtManualGst, GstBinExtManual, GstObjectExt, ObjectExt, PadExt,
     },
 };
 use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
-use gstreamer_video as gst_video;
-use image::{self, ColorType, ImageFormat};
 
 #[derive(Debug, Display, Error)]
 #[display(fmt = "Received error from {}: {} (debug: {:?})", src, error, debug)]
@@ -56,11 +50,11 @@ fn main() {
 
     for url in cam_list {
         Bastion::children(|children| {
-            children.with_exec(|ctx| async {
-                spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)); } };
+            children.with_exec(|_| async {
+                spawn! { async { create_pipeline(url).and_then(|pipeline| main_loop(pipeline, url)).expect(""); } };
                 loop {}
             })
-        });
+        }).expect("");
     }
 
     Bastion::block_until_stopped();
@@ -96,14 +90,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
-    // Initialize queue 2
-    let queue3 = gst::ElementFactory::make("queue", Some("queue3")).unwrap();
-    // Initialize vaapih264dec
-    let vaapih264dec1 = gst::ElementFactory::make("vaapih264dec", None)?;
-    // Initialize videorate
-    let videorate1 = gst::ElementFactory::make("videorate", None)?;
-    // Initialize capsfilter for videorate
-    let capsfilter1 = gst::ElementFactory::make("capsfilter", None)?;
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
@@ -111,20 +97,18 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize AppSink 2
     let sink2 = gst::ElementFactory::make("appsink", None)?;
 
-    // FULLSCREEN
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
     capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    tee.set_property("name", "thumbnail");
+    // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
     sink1.set_property_from_str("max-buffers", "100");
     sink1.set_property_from_str("emit-signals", "false");
     sink1.set_property_from_str("drop", "true");
 
     // THUMNAIL
-    tee.set_property("name", "thumbnail");
-    queue3.set_property_from_str("leaky", "downstream");
-    capsfilter1.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
     vaapipostproc1.set_property_from_str("width", "720");
     vaapipostproc1.set_property_from_str("height", "480");
     sink2.set_property_from_str("name", "app2");
@@ -146,17 +130,13 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &vaapipostproc,
         &vaapijpegenc,
         &sink1,
-        &queue3,
-        &vaapih264dec1,
-        &videorate1,
-        &capsfilter1,
         &vaapipostproc1,
         &vaapijpegenc1,
         &sink2,
     ];
-    pipeline.add_many(elements);
+    pipeline.add_many(elements).expect("");
 
-    src.link(&rtph264depay);
+    src.link(&rtph264depay).expect("");
     let rtph264depay_weak = rtph264depay.downgrade();
     src.connect_pad_added(move |_, src_pad| {
         let rtph264depay = match rtph264depay_weak.upgrade() {
@@ -169,7 +149,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         if sink_pad.is_linked() {
             return;
         }
-        src_pad.link(&sink_pad);
+        src_pad.link(&sink_pad).expect("");
     });
     rtph264depay.link(&queue1)?;
     queue1.link(&h264parse)?;
@@ -178,16 +158,11 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapih264dec.link(&videorate)?;
     videorate.link(&capsfilter)?;
     capsfilter.link(&tee)?;
+
     tee.link(&vaapipostproc)?;
     vaapipostproc.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
 
-    // h264parse.link(&tee)?;
-    // tee.link(&queue3)?;
-    // queue3.link(&vaapih264dec1)?;
-    // vaapih264dec1.link(&videorate1)?;
-    // videorate1.link(&capsfilter1)?;
-    // capsfilter1.link(&vaapipostproc1)?;
     tee.link(&vaapipostproc1)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
