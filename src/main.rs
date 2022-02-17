@@ -136,7 +136,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     ];
     pipeline.add_many(elements).expect("");
 
-    src.link(&rtph264depay).expect("");
+    src.link(&rtph264depay);
     let rtph264depay_weak = rtph264depay.downgrade();
     src.connect_pad_added(move |_, src_pad| {
         let rtph264depay = match rtph264depay_weak.upgrade() {
