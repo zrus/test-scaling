@@ -76,7 +76,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let src = gst::ElementFactory::make("rtspsrc", Some("src"))?;
     src.set_property("location", url);
     // Initialize rtph264depay
-    let rtph264depay = gst::ElementFactory::make("rtph264depay", "depay")?;
+    let rtph264depay = gst::ElementFactory::make("rtph264depay", Some("depay"))?;
     src.link(&rtph264depay);
     println!("1");
     let rtph264depay_weak = rtph264depay.downgrade();
