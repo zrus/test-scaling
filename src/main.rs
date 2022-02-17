@@ -83,21 +83,20 @@ fn main() {
             children.with_exec(|ctx| async {
                 let pipeline = match create_pipeline(url) {
                     Ok(pl) => pl,
-                    Err(_) => return,
+                    Err(_) => return Err(()),
                 };
                 loop {
                     let pl_weak = pipeline.downgrade();
-                    MessageHandler::new(ctx.recv().await?)
-                        .on_tell(move |message: &str, _| {
-                            spawn! { async {
-                                let pipeline = match pl_weak.upgrade() {
-                                    Some(pl) => pl,
-                                    None => return
-                                };
-                                main_loop(pipeline);
-                            }}
-                        })
-                        .on_tell(|fps: u8, _| {});
+                    MessageHandler::new(ctx.recv().await?).on_tell(move |message: &str, _| {
+                        spawn! { async {
+                            let pipeline = match pl_weak.upgrade() {
+                                Some(pl) => pl,
+                                None => return
+                            };
+                            main_loop(pipeline);
+                        }}
+                    });
+                    // .on_tell(|fps: u8, _| {});
                 }
             })
         })
@@ -255,7 +254,6 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
             }
             MessageView::Error(err) => {
                 pipeline.set_state(gst::State::Null)?;
-                println!("Error at {}: {:?}", url, err.error());
                 return Err(ErrorMessage {
                     src: msg
                         .src()
