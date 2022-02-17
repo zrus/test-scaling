@@ -79,7 +79,7 @@ fn main() {
     Bastion::start();
 
     for url in cam_list {
-        Bastion::children(|children| {
+        Bastion::children(move |children| {
             children.with_exec(|ctx| async move {
                 let pipeline = match create_pipeline(url) {
                     Ok(pl) => pl,
@@ -87,7 +87,7 @@ fn main() {
                 };
                 loop {
                     let pl_weak = pipeline.downgrade();
-                    MessageHandler::new(ctx.recv().await?).on_tell(move |message: &str, _| {
+                    MessageHandler::new(ctx.recv().await?).on_tell(move |_: &str, _| {
                         spawn! { async move {
                             let pipeline = match pl_weak.upgrade() {
                                 Some(pl) => pl,
