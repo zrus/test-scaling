@@ -115,7 +115,9 @@ fn main() {
                                     None => return,
                                 };
 
-                                pipeline.set_state(gst::State::Paused);
+                                pipeline
+                                    .set_state(gst::State::Paused)
+                                    .expect("cannot set pipeline state to paused");
 
                                 let videorate = pipeline
                                     .by_name("videorate")
@@ -135,8 +137,12 @@ fn main() {
 
                                 gst::Element::unlink(&capsfilter, &tee);
                                 gst::Element::unlink(&videorate, &capsfilter);
-                                capsfilter.set_state(gst::State::Null);
-                                pipeline.remove(&capsfilter);
+                                capsfilter
+                                    .set_state(gst::State::Null)
+                                    .expect("cannot set capsfilter state to null");
+                                pipeline
+                                    .remove(&capsfilter)
+                                    .expect("cannot remove old capsfilter");
 
                                 let capsfilter =
                                     gst::ElementFactory::make("capsfilter", Some("capsfilter"))
@@ -146,11 +152,17 @@ fn main() {
                                     &format!("video/x-raw,framerate={}/1", fps),
                                 );
 
-                                pipeline.add(&capsfilter);
-                                gst::Element::link(&videorate, &capsfilter);
-                                gst::Element::link(&capsfilter, &tee);
+                                pipeline
+                                    .add(&capsfilter)
+                                    .expect("cannot add new capsfilter");
+                                gst::Element::link(&videorate, &capsfilter)
+                                    .expect("cannot link videorate with new capsfilter");
+                                gst::Element::link(&capsfilter, &tee)
+                                    .expect("cannot link new capsfilter with tee");
 
-                                pipeline.set_state(gst::State::Playing);
+                                pipeline
+                                    .set_state(gst::State::Playing)
+                                    .expect("cannot set pipeline state to playing");
                             });
                     }
                 })
