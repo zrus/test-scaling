@@ -8,35 +8,36 @@ use gst::{
         Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
         GstObjectExt, ObjectExt, PadExt,
     },
+    PadExtManual,
 };
 use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 
-pub struct CustomEvent {
-    pub send_eos: bool,
+pub enum Event {
+    FPS(u8),
 }
 
-impl CustomEvent {
-    const EVENT_NAME: &'static str = "example-custom-event";
+impl Event {
+    const EVENT_NAME: &'static str = "change-filter";
 
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(send_eos: bool) -> gst::Event {
+    pub fn new_fps(fps: u8) -> gst::Event {
         let s = gst::Structure::builder(Self::EVENT_NAME)
-            .field("send_eos", &send_eos)
+            .field("fps", &fps)
             .build();
-        gst::event::CustomBoth::new(s)
+        gst::event::CustomUpstream::new(s)
     }
 
-    pub fn parse(ev: &gst::EventRef) -> Option<CustomEvent> {
+    pub fn parse(ev: &gst::EventRef) -> Option<Event> {
         match ev.view() {
-            gst::EventView::CustomBoth(e) => {
+            gst::EventView::CustomUpstream(e) => {
                 let s = match e.structure() {
                     Some(s) if s.name() == Self::EVENT_NAME => s,
                     _ => return None,
                 };
-                let send_eos = s.get::<bool>("send_eos").unwrap();
-                Some(CustomEvent { send_eos })
+                let fps = s.get::<u8>("fps").unwrap();
+                Some(Event::FPS(fps))
             }
             _ => None,
         }
@@ -113,18 +114,9 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                // pipeline.send_event(gst::event::Eos::new());
-                                pipeline.set_state(gst::State::Null);
-
-                                // let capsfilter = pipeline
-                                //     .by_name("caps1")
-                                //     .expect("cannot get caps element")
-                                //     .downcast::<gst::Element>()
-                                //     .expect("cannot downcast caps to element");
-                                // capsfilter.set_property_from_str(
-                                //     "caps",
-                                //     &format!("video/x-raw,framerate={}/1", fps),
-                                // );
+                                if !pipeline.send_event(Event::FPS(fps)) {
+                                    println!("Sent event failed!");
+                                };
                             });
                     }
                 })
@@ -245,6 +237,30 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     tee.link(&vaapipostproc1)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
+
+    let caps_src_pad = capsfilter
+        .static_pad("src")
+        .expect("cannot get src pad from capsfilter");
+    let pl_weak = pipeline.downgrade();
+    let capsfilter_weak = capsfilter.downgrade();
+    caps_src_pad.add_probe(gst::PadProbeType::EVENT_UPSTREAM, move |_, probe_info| {
+        match probe_info.data {
+            Some(gst::PadProbeData::Event(ref ev))
+                if ev.type_() == gst::EventType::CustomUpstream =>
+            {
+                if let Some(custom_event) = Event::parse(ev) {
+                    if let Event::FPS(fps) = custom_event {
+                        if let Some(caspfilter) = capsfilter_weak.upgrade() {
+                            caspfilter
+                                .set_property("caps", &format!("video/x-raw,framerate={}/1", fps));
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+        gst::PadProbeReturn::Ok
+    });
 
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
