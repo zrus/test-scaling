@@ -114,58 +114,60 @@ fn main() {
                                     None => return,
                                 };
 
-                                pipeline
-                                    .set_state(gst::State::Paused)
-                                    .expect("cannot set pipeline state to paused");
+                                pipeline.send_event(gst::event::Eos::new());
 
-                                let videorate = pipeline
-                                    .by_name("videorate")
-                                    .expect("cannot find element named videorate")
-                                    .downcast::<gst::Element>()
-                                    .expect("cannot downcast to videorate");
-                                let capsfilter = pipeline
-                                    .by_name("capsfilter")
-                                    .expect("cannot find element named capsfilter")
-                                    .downcast::<gst::Element>()
-                                    .expect("cannot downcast to capsfilter");
-                                let tee = pipeline
-                                    .by_name("tee")
-                                    .expect("cannot find element named tee")
-                                    .downcast::<gst::Element>()
-                                    .expect("cannot downcast to tee");
+                                // pipeline
+                                //     .set_state(gst::State::Paused)
+                                //     .expect("cannot set pipeline state to paused");
 
-                                capsfilter.unlink(&tee);
-                                println!("caps unlinked tee");
-                                videorate.unlink(&capsfilter);
-                                println!("videorate unlinked caps");
-                                capsfilter
-                                    .set_state(gst::State::Null)
-                                    .expect("cannot set capsfilter state to null");
-                                pipeline
-                                    .remove(&capsfilter)
-                                    .expect("cannot remove old capsfilter");
+                                // let videorate = pipeline
+                                //     .by_name("videorate")
+                                //     .expect("cannot find element named videorate")
+                                //     .downcast::<gst::Element>()
+                                //     .expect("cannot downcast to videorate");
+                                // let capsfilter = pipeline
+                                //     .by_name("capsfilter")
+                                //     .expect("cannot find element named capsfilter")
+                                //     .downcast::<gst::Element>()
+                                //     .expect("cannot downcast to capsfilter");
+                                // let tee = pipeline
+                                //     .by_name("tee")
+                                //     .expect("cannot find element named tee")
+                                //     .downcast::<gst::Element>()
+                                //     .expect("cannot downcast to tee");
 
-                                let capsfilter =
-                                    gst::ElementFactory::make("capsfilter", Some("capsfilter"))
-                                        .expect("cannot create new capsfilter");
-                                capsfilter.set_property_from_str(
-                                    "caps",
-                                    &format!("video/x-raw,framerate={}/1", fps),
-                                );
+                                // capsfilter.unlink(&tee);
+                                // println!("caps unlinked tee");
+                                // videorate.unlink(&capsfilter);
+                                // println!("videorate unlinked caps");
+                                // capsfilter
+                                //     .set_state(gst::State::Null)
+                                //     .expect("cannot set capsfilter state to null");
+                                // pipeline
+                                //     .remove(&capsfilter)
+                                //     .expect("cannot remove old capsfilter");
 
-                                pipeline
-                                    .add(&capsfilter)
-                                    .expect("cannot add new capsfilter");
-                                videorate
-                                    .link(&capsfilter)
-                                    .expect("cannot link videorate with new capsfilter");
-                                capsfilter
-                                    .link(&tee)
-                                    .expect("cannot link new capsfilter with tee");
+                                // let capsfilter =
+                                //     gst::ElementFactory::make("capsfilter", Some("capsfilter"))
+                                //         .expect("cannot create new capsfilter");
+                                // capsfilter.set_property_from_str(
+                                //     "caps",
+                                //     &format!("video/x-raw,framerate={}/1", fps),
+                                // );
 
-                                pipeline
-                                    .set_state(gst::State::Playing)
-                                    .expect("cannot set pipeline state to playing");
+                                // pipeline
+                                //     .add(&capsfilter)
+                                //     .expect("cannot add new capsfilter");
+                                // videorate
+                                //     .link(&capsfilter)
+                                //     .expect("cannot link videorate with new capsfilter");
+                                // capsfilter
+                                //     .link(&tee)
+                                //     .expect("cannot link new capsfilter with tee");
+
+                                // pipeline
+                                //     .set_state(gst::State::Playing)
+                                //     .expect("cannot set pipeline state to playing");
                             });
                     }
                 })
@@ -355,8 +357,8 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     use gst::MessageView;
     for msg in bus.iter_timed(gst::ClockTime::NONE) {
         match msg.view() {
-            MessageView::Eos(..) => {
-                println!("Got Eos message, done");
+            MessageView::Eos(msg) => {
+                println!("Got Eos message: {:?}, done", msg);
                 break;
             }
             MessageView::Error(err) => {
