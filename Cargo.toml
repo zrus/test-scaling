@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bastion = "*"
-gstreamer = "*"
+gstreamer = { version = "*", features = ["dox"] }
 gstreamer-app = "*"
 gstreamer-video = "*"
 byte-slice-cast = "*"

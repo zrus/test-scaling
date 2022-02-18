@@ -163,9 +163,12 @@ fn main() {
                                     .link(&tee)
                                     .expect("cannot link new capsfilter with tee");
 
-                                pipeline
-                                    .set_state(gst::State::Playing)
-                                    .expect("cannot set pipeline state to playing");
+                                let pl_weak = pl_weak.clone();
+                                if let Some(pipeline) = pl_weak.upgrade() {
+                                    pipeline
+                                        .set_state(gst::State::Playing)
+                                        .expect("cannot set pipeline state to playing");
+                                }
                             });
                     }
                 })
