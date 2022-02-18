@@ -124,7 +124,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(2u8);
+        Distributor::named(url).tell_one(5u8);
     }
 
     Bastion::block_until_stopped();
@@ -170,7 +170,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 2));
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
@@ -242,7 +242,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         .expect("cannot get src pad from queue2");
     let pl_weak = pipeline.downgrade();
     let capsfilter_weak = capsfilter.downgrade();
-    queue2_sinkpad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
+    queue2_sinkpad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_pad, probe_info| {
         match probe_info.data {
             Some(gst::PadProbeData::Event(ref ev))
                 if ev.type_() == gst::EventType::CustomDownstream =>
