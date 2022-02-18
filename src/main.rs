@@ -252,7 +252,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                     if let Event::FPS(fps) = custom_event {
                         if let Some(caspfilter) = capsfilter_weak.upgrade() {
                             caspfilter
-                                .set_property("caps", &format!("video/x-raw,framerate={}/1", fps));
+                                .set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", fps));
                         }
                     }
                 }
