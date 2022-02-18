@@ -262,7 +262,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                                 if let Some(pipeline) = pl_weak.upgrade() {
                                     pipeline.set_state(gst::State::Playing);
                                 }
-                            })
+                            });
                         }
                     }
                 }
