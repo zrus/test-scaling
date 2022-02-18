@@ -163,14 +163,9 @@ fn main() {
                                     .link(&tee)
                                     .expect("cannot link new capsfilter with tee");
 
-                                let pl_weak = pl_weak.clone();
-                                pipeline.call_async(move |_| {
-                                    if let Some(pipeline) = pl_weak.upgrade() {
-                                        pipeline
-                                            .set_state(gst::State::Playing)
-                                            .expect("cannot set pipeline state to playing");
-                                    }
-                                });
+                                pipeline
+                                    .set_state(gst::State::Playing)
+                                    .expect("cannot set pipeline state to playing");
                             });
                     }
                 })
