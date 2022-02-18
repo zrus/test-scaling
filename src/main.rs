@@ -124,7 +124,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(1u8);
+        Distributor::named(url).tell_one(5u8);
     }
 
     Bastion::block_until_stopped();
@@ -170,7 +170,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 1));
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
