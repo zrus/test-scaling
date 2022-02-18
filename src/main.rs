@@ -133,8 +133,8 @@ fn main() {
                                     .downcast::<gst::Element>()
                                     .expect("cannot downcast to tee");
 
-                                gst::Element::unlink(&videorate, &capsfilter);
                                 gst::Element::unlink(&capsfilter, &tee);
+                                gst::Element::unlink(&videorate, &capsfilter);
                                 capsfilter.set_state(gst::State::Null);
                                 pipeline.remove(&capsfilter);
 
