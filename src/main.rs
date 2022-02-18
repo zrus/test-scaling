@@ -5,8 +5,8 @@ use derive_more::{Display, Error};
 use gst::{
     element_error, glib,
     prelude::{
-        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
-        PadExt,
+        Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
+        GstObjectExt, ObjectExt, PadExt,
     },
 };
 use gst_app::AppSink;
@@ -164,11 +164,13 @@ fn main() {
                                     .expect("cannot link new capsfilter with tee");
 
                                 let pl_weak = pl_weak.clone();
-                                if let Some(pipeline) = pl_weak.upgrade() {
-                                    pipeline
-                                        .set_state(gst::State::Playing)
-                                        .expect("cannot set pipeline state to playing");
-                                }
+                                pipeline.call_async(move |_| {
+                                    if let Some(pipeline) = pl_weak.upgrade() {
+                                        pipeline
+                                            .set_state(gst::State::Playing)
+                                            .expect("cannot set pipeline state to playing");
+                                    }
+                                });
                             });
                     }
                 })
