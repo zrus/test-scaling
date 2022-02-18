@@ -365,15 +365,6 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                 }
                 .into());
             }
-            MessageView::StateChanged(s) => {
-                println!(
-                    "State changed from {:?}: {:?} -> {:?} ({:?})",
-                    s.src().map(|s| s.path_string()),
-                    s.old(),
-                    s.current(),
-                    s.pending()
-                );
-            }
             _ => (),
         }
     }
