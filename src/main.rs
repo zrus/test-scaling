@@ -113,7 +113,9 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                pipeline.send_event(gst::event::Eos::new());
+                                // pipeline.send_event(gst::event::Eos::new());
+                                pipeline.set_state(gst::State::Null);
+
                                 // let capsfilter = pipeline
                                 //     .by_name("caps1")
                                 //     .expect("cannot get caps element")
