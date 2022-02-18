@@ -170,7 +170,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 1));
+    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
