@@ -5,10 +5,9 @@ use derive_more::{Display, Error};
 use gst::{
     element_error, glib,
     prelude::{
-        Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
-        GstObjectExt, ObjectExt, PadExt,
+        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
+        PadExt,
     },
-    PadExtManual,
 };
 use gst_app::AppSink;
 use gstreamer as gst;
