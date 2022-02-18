@@ -5,8 +5,8 @@ use derive_more::{Display, Error};
 use gst::{
     element_error, glib,
     prelude::{
-        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
-        PadExt,
+        Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
+        GstObjectExt, ObjectExt, PadExt,
     },
 };
 use gst_app::AppSink;
@@ -113,15 +113,16 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                let capsfilter = pipeline
-                                    .by_name("caps1")
-                                    .expect("cannot get caps element")
-                                    .downcast::<gst::Element>()
-                                    .expect("cannot downcast caps to element");
-                                capsfilter.set_property_from_str(
-                                    "caps",
-                                    &format!("video/x-raw,framerate={}/1", fps),
-                                );
+                                pipeline.send_event(gst::State::Null);
+                                // let capsfilter = pipeline
+                                //     .by_name("caps1")
+                                //     .expect("cannot get caps element")
+                                //     .downcast::<gst::Element>()
+                                //     .expect("cannot downcast caps to element");
+                                // capsfilter.set_property_from_str(
+                                //     "caps",
+                                //     &format!("video/x-raw,framerate={}/1", fps),
+                                // );
                             });
                     }
                 })
