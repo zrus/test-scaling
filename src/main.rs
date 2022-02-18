@@ -237,12 +237,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
-    let caps_sink_pad = capsfilter
+    let queue2_sinkpad = queue2
         .static_pad("sink")
-        .expect("cannot get src pad from capsfilter");
+        .expect("cannot get src pad from queue2");
     let pl_weak = pipeline.downgrade();
     let capsfilter_weak = capsfilter.downgrade();
-    caps_sink_pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
+    queue2_sinkpad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
         match probe_info.data {
             Some(gst::PadProbeData::Event(ref ev))
                 if ev.type_() == gst::EventType::CustomDownstream =>
