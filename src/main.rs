@@ -26,12 +26,12 @@ impl Event {
         let s = gst::Structure::builder(Self::EVENT_NAME)
             .field("fps", &fps)
             .build();
-        gst::event::CustomUpstream::new(s)
+        gst::event::CustomDownstream::new(s)
     }
 
     pub fn parse(ev: &gst::EventRef) -> Option<Event> {
         match ev.view() {
-            gst::EventView::CustomUpstream(e) => {
+            gst::EventView::CustomDownstream(e) => {
                 let s = match e.structure() {
                     Some(s) if s.name() == Self::EVENT_NAME => s,
                     _ => return None,
@@ -246,7 +246,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     caps_src_pad.add_probe(gst::PadProbeType::EVENT_UPSTREAM, move |_, probe_info| {
         match probe_info.data {
             Some(gst::PadProbeData::Event(ref ev))
-                if ev.type_() == gst::EventType::CustomUpstream =>
+                if ev.type_() == gst::EventType::CustomDownstream =>
             {
                 if let Some(custom_event) = Event::parse(ev) {
                     if let Event::FPS(fps) = custom_event {
