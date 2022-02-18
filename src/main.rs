@@ -237,12 +237,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
+    let caps_src_pad = capsfilter
+        .static_pad("src")
+        .expect("cannot get src pad from capsfilter");
     let pl_weak = pipeline.downgrade();
     let capsfilter_weak = capsfilter.downgrade();
-    let sink_pad = pipeline
-        .static_pad("sink")
-        .expect("cannot get sink pad from pipeline");
-    sink_pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
+    caps_src_pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
         match probe_info.data {
             Some(gst::PadProbeData::Event(ref ev))
                 if ev.type_() == gst::EventType::CustomDownstream =>
@@ -322,18 +322,20 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         .expect("Sink element is expected to be an appsink!");
 
     let url1 = url.to_owned();
-    appsink1.set_callbacks(
+    appsink1.set_callbacks(|| -> gst_app::AppSinkCallbacks {
+        println!("1111111111111111");
         gst_app::AppSinkCallbacks::builder()
             .new_sample(move |appsink| callback(appsink, &url1, "fullscreen"))
-            .build(),
-    );
+            .build()
+    });
 
     let url2 = url.to_owned();
-    appsink2.set_callbacks(
+    appsink2.set_callbacks(|| -> gst_app::AppSinkCallbacks {
+        println!("2222222222222222");
         gst_app::AppSinkCallbacks::builder()
             .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
-            .build(),
-    );
+            .build()
+    });
 
     Ok(pipeline)
 }
