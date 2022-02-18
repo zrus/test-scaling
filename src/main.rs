@@ -91,18 +91,22 @@ fn main() {
                     loop {
                         let pl_weak = pipeline.downgrade();
                         MessageHandler::new(ctx.recv().await?)
-                            .on_tell(|_: &str, _| {
+                            .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
-                                println!("Start mainloop");
-                                spawn! { async move {
-                                    let pipeline = match pl_weak.upgrade() {
-                                        Some(pl) => pl,
-                                        None => return
-                                    };
-                                    main_loop(pipeline);
-                                }};
+                                match cmd {
+                                    "start" => {
+                                        spawn! { async move {
+                                            let pipeline = match pl_weak.upgrade() {
+                                                Some(pl) => pl,
+                                                None => return
+                                            };
+                                            main_loop(pipeline);
+                                        }};
+                                    }
+                                    _ => {}
+                                }
                             })
-                            .on_tell(|fps: i32, _| {
+                            .on_tell(|fps: u8, _| {
                                 println!("Change fps");
                                 let pl_weak = pl_weak.clone();
                                 let pipeline = match pl_weak.upgrade() {
@@ -114,7 +118,10 @@ fn main() {
                                     .expect("cannot get caps element")
                                     .downcast::<gst::Element>()
                                     .expect("cannot downcast caps to element");
-                                capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", fps));
+                                capsfilter.set_property_from_str(
+                                    "caps",
+                                    &format!("video/x-raw,framerate={}/1", fps),
+                                );
                             });
                     }
                 })
@@ -122,7 +129,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(1);
+        Distributor::named(url).tell_one(1u8);
     }
 
     Bastion::block_until_stopped();
@@ -287,15 +294,6 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                     source: err.error(),
                 }
                 .into());
-            }
-            MessageView::StateChanged(s) => {
-                println!(
-                    "State changed from {:?}: {:?} -> {:?} ({:?})",
-                    s.src().map(|s| s.path_string()),
-                    s.old(),
-                    s.current(),
-                    s.pending()
-                );
             }
             _ => (),
         }
