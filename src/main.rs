@@ -175,7 +175,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         .static_pad("src")
         .expect("cannot get src pad from capsfilter");
     let capsfilter_weak = capsfilter.downgrade();
-    caps_src_pad.add_probe(gst::PadProbeType::EVENT_UPSTREAM, move |_, probe_info| {
+    caps_src_pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, probe_info| {
         match probe_info.data {
             Some(gst::PadProbeData::Event(ref ev))
                 if ev.type_() == gst::EventType::CustomDownstream =>
