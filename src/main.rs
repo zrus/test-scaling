@@ -251,7 +251,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                 {
                     if let Some(custom_event) = Event::parse(ev) {
                         let Event::FPS(fps) = custom_event;
-                        if let (Some(_pipeline), Some(capsfilter)) =
+                        if let (Some(pipeline), Some(capsfilter)) =
                             (pl_weak.upgrade(), capsfilter_weak.upgrade())
                         {
                             // pipeline
@@ -303,9 +303,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                             //     .link(&tee)
                             //     .expect("cannot link new capsfilter with tee");
 
-                            // pipeline
-                            //     .set_state(gst::State::Playing)
-                            //     .expect("cannot set pipeline state to playing");
+                            pipeline
+                                .set_state(gst::State::Playing)
+                                .expect("cannot set pipeline state to playing");
                         }
                     }
                 }
