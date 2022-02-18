@@ -135,8 +135,8 @@ fn main() {
                                     .downcast::<gst::Element>()
                                     .expect("cannot downcast to tee");
 
-                                gst::Element::unlink(&capsfilter, &tee);
-                                gst::Element::unlink(&videorate, &capsfilter);
+                                capsfilter.unlink(&tee);
+                                videorate.unlink(&capsfilter);
                                 capsfilter
                                     .set_state(gst::State::Null)
                                     .expect("cannot set capsfilter state to null");
@@ -155,9 +155,11 @@ fn main() {
                                 pipeline
                                     .add(&capsfilter)
                                     .expect("cannot add new capsfilter");
-                                gst::Element::link(&videorate, &capsfilter)
+                                videorate
+                                    .link(&capsfilter)
                                     .expect("cannot link videorate with new capsfilter");
-                                gst::Element::link(&capsfilter, &tee)
+                                capsfilter
+                                    .link(&tee)
                                     .expect("cannot link new capsfilter with tee");
 
                                 pipeline
