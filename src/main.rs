@@ -136,7 +136,9 @@ fn main() {
                                     .expect("cannot downcast to tee");
 
                                 capsfilter.unlink(&tee);
+                                println!("caps unlinked tee");
                                 videorate.unlink(&capsfilter);
+                                println!("videorate unlinked caps");
                                 capsfilter
                                     .set_state(gst::State::Null)
                                     .expect("cannot set capsfilter state to null");
@@ -162,9 +164,14 @@ fn main() {
                                     .link(&tee)
                                     .expect("cannot link new capsfilter with tee");
 
-                                pipeline
-                                    .set_state(gst::State::Playing)
-                                    .expect("cannot set pipeline state to playing");
+                                let pl_weak = pl_weak.clone();
+                                pipeline.call_async(|| {
+                                    if let Some(pipeline) = pl_weak.upgrade() {
+                                        pipeline
+                                            .set_state(gst::State::Playing)
+                                            .expect("cannot set pipeline state to playing");
+                                    }
+                                })
                             });
                     }
                 })
