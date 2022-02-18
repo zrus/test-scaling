@@ -171,6 +171,30 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
     capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    let caps_src_pad = capsfilter
+        .static_pad("src")
+        .expect("cannot get src pad from capsfilter");
+    let capsfilter_weak = capsfilter.downgrade();
+    caps_src_pad.add_probe(gst::PadProbeType::EVENT_UPSTREAM, move |_, probe_info| {
+        match probe_info.data {
+            Some(gst::PadProbeData::Event(ref ev))
+                if ev.type_() == gst::EventType::CustomDownstream =>
+            {
+                if let Some(custom_event) = Event::parse(ev) {
+                    if let Event::FPS(fps) = custom_event {
+                        if let Some(caspfilter) = capsfilter_weak.upgrade() {
+                            caspfilter.set_property_from_str(
+                                "caps",
+                                &format!("video/x-raw,framerate={}/1", fps),
+                            );
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+        gst::PadProbeReturn::Ok
+    });
     tee.set_property("name", "thumbnail");
 
     // FULLSCREEN
@@ -237,30 +261,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     tee.link(&vaapipostproc1)?;
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
-
-    let caps_src_pad = capsfilter
-        .static_pad("src")
-        .expect("cannot get src pad from capsfilter");
-    let pl_weak = pipeline.downgrade();
-    let capsfilter_weak = capsfilter.downgrade();
-    caps_src_pad.add_probe(gst::PadProbeType::EVENT_UPSTREAM, move |_, probe_info| {
-        match probe_info.data {
-            Some(gst::PadProbeData::Event(ref ev))
-                if ev.type_() == gst::EventType::CustomDownstream =>
-            {
-                if let Some(custom_event) = Event::parse(ev) {
-                    if let Event::FPS(fps) = custom_event {
-                        if let Some(caspfilter) = capsfilter_weak.upgrade() {
-                            caspfilter
-                                .set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", fps));
-                        }
-                    }
-                }
-            }
-            _ => (),
-        }
-        gst::PadProbeReturn::Ok
-    });
 
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
