@@ -114,11 +114,7 @@ fn main() {
                                     .expect("cannot get caps element")
                                     .downcast::<gst::Element>()
                                     .expect("cannot downcast caps to element");
-                                let new_caps = gst::Caps::new_simple(
-                                    "video/x-raw",
-                                    &[("framerate", &gst::Fraction::new(fps, 1))],
-                                );
-                                capsfilter.set_property("caps", &new_caps);
+                                capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", fps));
                             });
                     }
                 })
