@@ -114,7 +114,7 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                if !pipeline.send_event(Event::FPS(fps)) {
+                                if !pipeline.send_event(Event::new_fps(fps)) {
                                     println!("Sent event failed!");
                                 };
                             });
