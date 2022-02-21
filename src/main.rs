@@ -365,6 +365,7 @@ fn callback(
     screen_type: &str,
 ) -> Result<gst::FlowSuccess, gst::FlowError> {
     let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
+    println!("1");
 
     let buffer = sample.buffer().ok_or_else(|| {
         element_error!(
@@ -374,6 +375,7 @@ fn callback(
         );
         gst::FlowError::Error
     })?;
+    println!("2");
 
     let map = buffer.map_readable().map_err(|_| {
         element_error!(
@@ -383,6 +385,7 @@ fn callback(
         );
         gst::FlowError::Error
     })?;
+    println!("3");
 
     let _samples = map.as_slice_of::<u8>().map_err(|_| {
         element_error!(
