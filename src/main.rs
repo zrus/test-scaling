@@ -155,7 +155,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
     // Initialize caps for filter
-    let caps = gst::Caps::from(&format!("video/x-raw,framerate={}/1", 5));
+    let caps = gst::Caps::new_simple("video/x-raw", &[("framerate", gst::Fraction::new(5, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
