@@ -146,38 +146,29 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let pipeline = gst::Pipeline::new(None)
         .downcast::<gst::Pipeline>()
         .expect("Expected a gst::Pipeline");
-    let src = gst::ElementFactory::make("rtspsrc", None).map_err(|_| MissingElement("rtspsrc"))?;
+    let src = gst::ElementFactory::make("rtspsrc", None)?;
     src.set_property("location", url);
 
-    let rtph264depay = gst::ElementFactory::make("rtph264depay", None)
-        .map_err(|_| MissingElement("rtph264depay"))?;
+    let rtph264depay = gst::ElementFactory::make("rtph264depay", None)?;
     let queue =
         gst::ElementFactory::make("queue", Some("queue")).expect("Could not create queue element.");
     queue.set_property_from_str("leaky", "upstream");
     let queue_2 = gst::ElementFactory::make("queue", Some("queue_2"))
         .expect("Could not create queue element.");
     queue_2.set_property_from_str("leaky", "upstream");
-    let queue_3 =
-        gst::ElementFactory::make("queue", Some("queue_3")).map_err(|_| MissingElement("queue"))?;
-    let h264parse =
-        gst::ElementFactory::make("h264parse", None).map_err(|_| MissingElement("h264parse"))?;
-    let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)
-        .map_err(|_| MissingElement("vaapih264dec"))?;
-    let videorate = gst::ElementFactory::make("videorate", Some("videorate"))
-        .map_err(|_| MissingElement("videorate"))?;
-    let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)
-        .map_err(|_| MissingElement("vaapipostproc"))?;
-    let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)
-        .map_err(|_| MissingElement("vaapijpegenc"))?;
+    let queue_3 = gst::ElementFactory::make("queue", Some("queue_3"))?;
+    let h264parse = gst::ElementFactory::make("h264parse", None)?;
+    let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)?;
+    let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
+    let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
+    let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
 
-    let capsfilter = gst::ElementFactory::make("capsfilter", Some("capsfilter"))
-        .map_err(|_| MissingElement("capsfilter"))?;
+    let capsfilter = gst::ElementFactory::make("capsfilter", Some("capsfilter"))?;
     let caps = gst::Caps::builder("video/x-raw")
-        .field("framerate", gst::Fraction::new(fps as i32, 1))
+        .field("framerate", gst::Fraction::new(5, 1))
         .build();
     capsfilter.set_property("caps", &caps);
-    let sink = gst::ElementFactory::make("appsink", Some("sink"))
-        .map_err(|_| MissingElement("appsink"))?;
+    let sink = gst::ElementFactory::make("appsink", Some("sink"))?;
 
     let elements = &[
         &src,
@@ -260,55 +251,11 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     appsink.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
             // Add a handler to the "new-sample" signal.
-            .new_sample(move |appsink| {
-                // Pull the sample in question out of the appsink's buffer.
-                let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
-                // println!("Sample: {:?}", sample);
-                let buffer = sample.buffer().ok_or_else(|| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to get buffer from appsink")
-                    );
-
-                    gst::FlowError::Error
-                })?;
-
-                // println!("Buffer {:?}", buffer);
-
-                let map = buffer.map_readable().map_err(|_| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to map buffer readable")
-                    );
-
-                    gst::FlowError::Error
-                })?;
-                // println!("xxxxxxxx Map {:?}", map);
-                let _frame_buffer = map.as_slice_of::<u8>().map_err(|_| {
-                    element_error!(
-                        appsink,
-                        gst::ResourceError::Failed,
-                        ("Failed to interprete buffer as S16 PCM")
-                    );
-
-                    gst::FlowError::Error
-                })?;
-
-                println!("{} - {}: {:?}", url, screen_type, std::time::Instant::now());
-
-                Ok(gst::FlowSuccess::Ok)
-                // Err(gst::FlowError::Error)
-            })
+            .new_sample(move |appsink| callback(appsink, url, "thumbnail"))
             .build(),
     );
 
     Ok(pipeline)
-}
-
-fn MissingElement(arg: &str) -> _ {
-    todo!()
 }
 
 fn main_loop(
