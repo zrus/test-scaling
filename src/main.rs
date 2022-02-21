@@ -198,10 +198,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &tee,
         &vaapipostproc,
         &vaapijpegenc,
-        &sink1,
-        &vaapipostproc1,
-        &vaapijpegenc1,
-        &sink2,
+        // &sink1,
+        // &vaapipostproc1,
+        // &vaapijpegenc1,
+        // &sink2,
     ];
     pipeline.add_many(elements).expect("");
 
@@ -232,17 +232,17 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
 
-    tee.link(&vaapipostproc1)?;
-    vaapipostproc1.link(&vaapijpegenc1)?;
-    vaapijpegenc1.link(&sink2)?;
+    // tee.link(&vaapipostproc1)?;
+    // vaapipostproc1.link(&vaapijpegenc1)?;
+    // vaapijpegenc1.link(&sink2)?;
 
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
         .expect("Sink element is expected to be an appsink!");
 
-    let appsink2 = sink2
-        .dynamic_cast::<gst_app::AppSink>()
-        .expect("Sink element is expected to be an appsink!");
+    // let appsink2 = sink2
+    //     .dynamic_cast::<gst_app::AppSink>()
+    //     .expect("Sink element is expected to be an appsink!");
 
     let url1 = url.to_owned();
     appsink1.set_callbacks(
@@ -251,19 +251,19 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    let url2 = url.to_owned();
-    appsink2.set_callbacks(
-        gst_app::AppSinkCallbacks::builder()
-            .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
-            .build(),
-    );
+    // let url2 = url.to_owned();
+    // appsink2.set_callbacks(
+    //     gst_app::AppSinkCallbacks::builder()
+    //         .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
+    //         .build(),
+    // );
 
     Ok(pipeline)
 }
 
 fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
-    // let pipeline = set_framerate(pipeline, 5);
+    let pipeline = set_framerate(pipeline, 5);
 
     let bus = pipeline
         .bus()
