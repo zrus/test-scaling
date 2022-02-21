@@ -198,7 +198,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &tee,
         &vaapipostproc,
         &vaapijpegenc,
-        // &sink1,
+        &sink1,
         // &vaapipostproc1,
         // &vaapijpegenc1,
         // &sink2,
