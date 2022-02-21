@@ -122,7 +122,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(5);
+        Distributor::named(url).tell_one(3);
     }
 
     Bastion::block_until_stopped();
@@ -256,7 +256,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    let pipeline = set_framerate(pipeline, 1);
+    let pipeline = set_framerate(pipeline, 5);
 
     Ok(pipeline)
 }
