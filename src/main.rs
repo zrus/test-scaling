@@ -339,8 +339,8 @@ fn main_loop(
                     pipeline.remove(&filter);
 
                     let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-
                     filter.set_property("caps", &new_caps);
+                    
                     pipeline.add(&filter);
                     videorate.link(&filter);
                     filter.link(&tee);
