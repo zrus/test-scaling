@@ -114,21 +114,8 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                // if !pipeline.send_event(Event::new_fps(fps)) {
-                                //     println!("cannot send fps");
-                                // };
 
-                                let filter = pipeline
-                                    .by_name("filter")
-                                    .expect("Cannot find any element named filter")
-                                    .downcast::<gst::Element>()
-                                    .expect("Cannot downcast filter to element");
-
-                                let new_caps = gst::Caps::new_simple(
-                                    "video/x-raw",
-                                    &[("framerate", &gst::Fraction::new(fps, 1))],
-                                );
-                                filter.set_property("caps", &new_caps);
+                                set_framerate(pipeline, fps);
                             });
                     }
                 })
@@ -166,8 +153,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-    // Initialize caps for filter
-    let caps = gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
@@ -251,86 +236,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
-    // capsfilter.set_property("caps", &caps);
-
-    // let capsfilter_sinkpad = capsfilter
-    //     .static_pad("sink")
-    //     .expect("cannot get sink pad from capsfilter");
-    // let pl_weak = pipeline.downgrade();
-    // let capsfilter_weak = capsfilter.downgrade();
-    // capsfilter_sinkpad.add_probe(
-    //     gst::PadProbeType::EVENT_UPSTREAM,
-    //     move |_pad, probe_info| {
-    //         match probe_info.data {
-    //             Some(gst::PadProbeData::Event(ref ev))
-    //                 if ev.type_() == gst::EventType::CustomUpstream =>
-    //             {
-    //                 if let Some(custom_event) = Event::parse(ev) {
-    //                     let Event::FPS(fps) = custom_event;
-    //                     if let (Some(_pipeline), Some(capsfilter)) =
-    //                         (pl_weak.upgrade(), capsfilter_weak.upgrade())
-    //                     {
-    //                         // pipeline
-    //                         //     .set_state(gst::State::Paused)
-    //                         //     .expect("cannot set pipeline state to paused");
-
-    //                         // let videorate = pipeline
-    //                         //     .by_name("videorate")
-    //                         //     .expect("cannot find element named videorate")
-    //                         //     .downcast::<gst::Element>()
-    //                         //     .expect("cannot downcast to videorate");
-    //                         // let capsfilter = pipeline
-    //                         //     .by_name("filter")
-    //                         //     .expect("cannot find element named capsfilter")
-    //                         //     .downcast::<gst::Element>()
-    //                         //     .expect("cannot downcast to capsfilter");
-    //                         // let tee = pipeline
-    //                         //     .by_name("tee")
-    //                         //     .expect("cannot find element named tee")
-    //                         //     .downcast::<gst::Element>()
-    //                         //     .expect("cannot downcast to tee");
-
-    //                         // capsfilter.unlink(&tee);
-    //                         // println!("caps unlinked tee");
-    //                         // videorate.unlink(&capsfilter);
-    //                         // println!("videorate unlinked caps");
-    //                         // capsfilter
-    //                         //     .set_state(gst::State::Null)
-    //                         //     .expect("cannot set capsfilter state to null");
-    //                         // pipeline
-    //                         //     .remove(&capsfilter)
-    //                         //     .expect("cannot remove old capsfilter");
-
-    //                         // let capsfilter =
-    //                         //     gst::ElementFactory::make("capsfilter", Some("filter"))
-    //                         //         .expect("cannot create new capsfilter");
-    //                         capsfilter.set_property_from_str(
-    //                             "caps",
-    //                             &format!("video/x-raw,framerate={}/1", fps),
-    //                         );
-
-    //                         // pipeline
-    //                         //     .add(&capsfilter)
-    //                         //     .expect("cannot add new capsfilter");
-    //                         // videorate
-    //                         //     .link(&capsfilter)
-    //                         //     .expect("cannot link videorate with new capsfilter");
-    //                         // capsfilter
-    //                         //     .link(&tee)
-    //                         //     .expect("cannot link new capsfilter with tee");
-
-    //                         // pipeline
-    //                         //     .set_state(gst::State::Playing)
-    //                         //     .expect("cannot set pipeline state to playing");
-    //                     }
-    //                 }
-    //             }
-    //             _ => (),
-    //         }
-    //         gst::PadProbeReturn::Ok
-    //     },
-    // );
-
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
         .expect("Sink element is expected to be an appsink!");
@@ -358,6 +263,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
 fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
+    let pipeline = set_framerate(pipeline, 5);
 
     let bus = pipeline
         .bus()
@@ -431,4 +337,21 @@ fn callback(
     println!("{} - {}: {:?}", url, screen_type, std::time::Instant::now());
 
     Ok(gst::FlowSuccess::Ok)
+}
+
+fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
+    let filter = pipeline
+        .by_name("filter")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
+
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
+
+    filter.set_property("caps", &new_caps);
+
+    pipeline
 }
