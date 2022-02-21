@@ -5,7 +5,8 @@ use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
 use gst::{
-    element_error, glib,
+    element_error,
+    glib::{self, clone::Downgrade},
     prelude::{
         Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
         GstObjectExt, ObjectExt, PadExt,
@@ -94,9 +95,11 @@ fn main() {
                     let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = pipeline.downgrade();
+                        let is_fps_updated_weak = is_fps_updated.downgrade();
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
+                                let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
@@ -104,7 +107,11 @@ fn main() {
                                                 Some(pl) => pl,
                                                 None => return
                                             };
-                                            main_loop(pipeline);
+                                            let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                                Some(uf) => uf,
+                                                None => return
+                                            };
+                                            main_loop(pipeline, is_fps_updated);
                                         }};
                                     }
                                     _ => {}
@@ -118,7 +125,7 @@ fn main() {
                                     None => return,
                                 };
                                 // set_framerate(pipeline, fps);
-                                *is_fps_updated.write().unwrap() = Some(fps);
+                                is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -295,7 +302,7 @@ fn main_loop(
                 }
                 .into());
             }
-            _ if *is_fps_updated.read().unwrap().is_some() => {
+            _ if let Some(fps) = *is_fps_updated.read().unwrap() => {
                 pipeline.set_state(gst::State::Paused)?;
 
                 let filter = pipeline
@@ -306,7 +313,7 @@ fn main_loop(
 
                 let new_caps = gst::Caps::new_simple(
                     "video/x-raw",
-                    &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+                    &[("framerate", &gst::Fraction::new(fps, 1))],
                 );
 
                 filter.set_property("caps", &new_caps);
