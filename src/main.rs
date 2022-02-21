@@ -163,12 +163,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-    let new_caps = gst::Caps::new_simple(
-        "video/x-raw",
-        &[("framerate", &gst::Fraction::new(5, 1))],
-    );
+    let new_caps =
+        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
     // Initialize vaapipostproc
-    let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
+    let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
     // Initialize vaapijpegenc
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
@@ -209,7 +207,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &vaapih264dec,
         &videorate,
         &capsfilter,
-        &tee,
+        // &tee,
         &vaapipostproc,
         &vaapijpegenc,
         &sink1,
@@ -240,9 +238,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue2.link(&vaapih264dec)?;
     vaapih264dec.link(&videorate)?;
     videorate.link(&capsfilter)?;
-    capsfilter.link(&tee)?;
-
-    tee.link(&vaapipostproc)?;
+    // capsfilter.link(&tee)?;
+    capsfilter.link(&vaapipostproc)?;
+    // tee.link(&vaapipostproc)?;
     vaapipostproc.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
 
@@ -321,8 +319,8 @@ fn main_loop(
                         .downcast::<gst::Element>()
                         .expect("");
 
-                    let tee = pipeline
-                        .by_name("tee")
+                    let vaapipostproc = pipeline
+                        .by_name("vaapipostproc")
                         .expect("")
                         .downcast::<gst::Element>()
                         .expect("");
@@ -332,8 +330,8 @@ fn main_loop(
                         &[("framerate", &gst::Fraction::new(fps, 1))],
                     );
 
-                    filter.unlink(&tee);
-                    videorate.unlink(&filter);
+                    gst::Element::unlink(&filter, &vaapipostproc);
+                    gst::Element::unlink(&videorate, &filter);
 
                     filter.set_state(gst::State::Null)?;
                     pipeline.remove(&filter);
@@ -342,8 +340,9 @@ fn main_loop(
                     filter.set_property("caps", &new_caps);
 
                     pipeline.add(&filter);
-                    videorate.link(&filter);
-                    filter.link(&tee);
+                    gst::Element::link(&videorate, &filter);
+                    gst::Element::link(&filter, &vaapipostproc);
+
                     *is_fps_updated.write().unwrap() = None;
 
                     pipeline.set_state(gst::State::Playing)?;
