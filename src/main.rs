@@ -153,7 +153,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize videorate
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
-    let capsfilter = gst::ElementFactory::make("capsfilter", Some("capsfilter"))?;
+    let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
+    // Initialize caps for filter
+    let caps = gst::Caps::from(&format!("video/x-raw,framerate={}/1", 5));
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
@@ -170,7 +172,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
-    capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
+    // capsfilter.set_property_from_str("caps", &format!("video/x-raw,framerate={}/1", 5));
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
@@ -237,6 +239,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
+    capsfilter.set_property("caps", &caps);
+
     let sinkpad1 = sink1
         .static_pad("sink")
         .expect("cannot get sink pad from appsink 1");
@@ -264,7 +268,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                             //     .downcast::<gst::Element>()
                             //     .expect("cannot downcast to videorate");
                             // let capsfilter = pipeline
-                            //     .by_name("capsfilter")
+                            //     .by_name("filter")
                             //     .expect("cannot find element named capsfilter")
                             //     .downcast::<gst::Element>()
                             //     .expect("cannot downcast to capsfilter");
@@ -286,7 +290,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
                             //     .expect("cannot remove old capsfilter");
 
                             // let capsfilter =
-                            //     gst::ElementFactory::make("capsfilter", Some("capsfilter"))
+                            //     gst::ElementFactory::make("capsfilter", Some("filter"))
                             //         .expect("cannot create new capsfilter");
                             capsfilter.set_property_from_str(
                                 "caps",
