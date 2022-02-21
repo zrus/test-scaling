@@ -165,7 +165,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
     let new_caps = gst::Caps::new_simple(
         "video/x-raw",
-        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+        &[("framerate", &gst::Fraction::new(5, 1))],
     );
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
@@ -341,7 +341,7 @@ fn main_loop(
                     let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
 
                     filter.set_property("caps", &new_caps);
-                    pipeline.add(filter);
+                    pipeline.add(&filter);
                     videorate.link(&filter);
                     filter.link(&tee);
                     *is_fps_updated.write().unwrap() = None;
