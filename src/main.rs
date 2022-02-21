@@ -318,6 +318,7 @@ fn main_loop(
                     );
 
                     filter.set_property("caps", &new_caps);
+                    *is_fps_updated.write().unwrap() = None;
 
                     // pipeline.set_state(gst::State::Playing)?;
                 }
