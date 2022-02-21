@@ -115,7 +115,8 @@ fn main() {
                                     None => return,
                                 };
 
-                                set_framerate(pipeline, fps);
+                                let pipeline = set_framerate(pipeline, fps);
+                                println!("{:?}", pipeline.current_state());
                             });
                     }
                 })
