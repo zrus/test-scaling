@@ -289,6 +289,9 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                 }
                 .into());
             }
+            MessageView::StateChanged(s) => {
+                println!("{}", s.current());
+            }
             _ => (),
         }
     }
