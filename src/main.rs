@@ -244,7 +244,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     appsink.set_property("max-buffers", 1u32);
     appsink.set_property("drop", true);
 
-    let pipeline_weak = pipeline.downgrade();
+    let pipeline_weak = ObjectExt::downgrade(&pipeline);
 
     // Getting data out of the appsink is done by setting callbacks on it.
     // The appsink will then call those handlers, as soon as data is available.
