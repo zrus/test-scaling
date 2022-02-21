@@ -114,10 +114,7 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-
-                                let pipeline = set_framerate(pipeline, fps);
-                                drop(pipeline);
-                                drop(pl_weak);
+                                set_framerate(pipeline, fps);
                             });
                     }
                 })
@@ -291,9 +288,6 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                 }
                 .into());
             }
-            MessageView::StateChanged(s) => {
-                println!("{:?}", s.current());
-            }
             _ => (),
         }
     }
@@ -345,6 +339,7 @@ fn callback(
 }
 
 fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
+    pipeline.set_state(gst::State::Paused);
     let filter = pipeline
         .by_name("filter")
         .expect("Cannot find any element named filter")
@@ -358,5 +353,6 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
 
     filter.set_property("caps", &new_caps);
 
+    pipeline.set_state(gst::State::Playing);
     pipeline
 }
