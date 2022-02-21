@@ -251,7 +251,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapipostproc1.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
-    capsfilter.set_property("caps", &caps);
+    // capsfilter.set_property("caps", &caps);
 
     // let capsfilter_sinkpad = capsfilter
     //     .static_pad("sink")
