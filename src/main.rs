@@ -263,7 +263,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
 fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
-    let pipeline = set_framerate(pipeline, 5);
+    // let pipeline = set_framerate(pipeline, 5);
 
     let bus = pipeline
         .bus()
