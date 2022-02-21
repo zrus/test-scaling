@@ -114,6 +114,7 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
+                                let pipeline = set_framerate(pipeline, 1);
                                 set_framerate(pipeline, fps);
                             });
                     }
