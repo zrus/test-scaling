@@ -163,6 +163,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", None)?;
     // Initialize vaapijpegenc
@@ -179,6 +183,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
+    capsfilter.set_property("caps", &new_caps);
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
@@ -267,8 +272,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    let pipeline = set_framerate(pipeline, 5);
-
     Ok(pipeline)
 }
 
@@ -304,23 +307,46 @@ fn main_loop(
             }
             _ if is_fps_updated.read().unwrap().is_some() => {
                 if let Some(fps) = *is_fps_updated.read().unwrap() {
-                    // pipeline.set_state(gst::State::Paused)?;
+                    pipeline.set_state(gst::State::Paused)?;
+
+                    let videorate = pipeline
+                        .by_name("videorate")
+                        .expect("")
+                        .downcast::<gst::Element>()
+                        .expect("");
 
                     let filter = pipeline
                         .by_name("filter")
-                        .expect("Cannot find any element named filter")
+                        .expect("")
                         .downcast::<gst::Element>()
-                        .expect("Cannot downcast filter to element");
+                        .expect("");
+
+                    let tee = pipeline
+                        .by_name("tee")
+                        .expect("")
+                        .downcast::<gst::Element>()
+                        .expect("");
 
                     let new_caps = gst::Caps::new_simple(
                         "video/x-raw",
                         &[("framerate", &gst::Fraction::new(fps, 1))],
                     );
 
+                    filter.unlink(&tee);
+                    videorate.unlink(&filter);
+
+                    filter.set_state(gst::State::Null)?;
+                    pipeline.remove(&filter);
+
+                    let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
+
                     filter.set_property("caps", &new_caps);
+                    pipeline.add(filter);
+                    videorate.link(&filter);
+                    filter.link(&tee);
                     *is_fps_updated.write().unwrap() = None;
 
-                    // pipeline.set_state(gst::State::Playing)?;
+                    pipeline.set_state(gst::State::Playing)?;
                 }
             }
             _ => (),
