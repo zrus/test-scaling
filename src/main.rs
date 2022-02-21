@@ -303,23 +303,24 @@ fn main_loop(
                 .into());
             }
             _ if is_fps_updated.read().unwrap().is_some() => {
-                let Some(fps) = *is_fps_updated.read().unwrap();
-                pipeline.set_state(gst::State::Paused)?;
+                if let Some(fps) = *is_fps_updated.read().unwrap() {
+                    pipeline.set_state(gst::State::Paused)?;
 
-                let filter = pipeline
-                    .by_name("filter")
-                    .expect("Cannot find any element named filter")
-                    .downcast::<gst::Element>()
-                    .expect("Cannot downcast filter to element");
+                    let filter = pipeline
+                        .by_name("filter")
+                        .expect("Cannot find any element named filter")
+                        .downcast::<gst::Element>()
+                        .expect("Cannot downcast filter to element");
 
-                let new_caps = gst::Caps::new_simple(
-                    "video/x-raw",
-                    &[("framerate", &gst::Fraction::new(fps, 1))],
-                );
+                    let new_caps = gst::Caps::new_simple(
+                        "video/x-raw",
+                        &[("framerate", &gst::Fraction::new(fps, 1))],
+                    );
 
-                filter.set_property("caps", &new_caps);
+                    filter.set_property("caps", &new_caps);
 
-                pipeline.set_state(gst::State::Playing)?;
+                    pipeline.set_state(gst::State::Playing)?;
+                }
             }
             _ => (),
         }
