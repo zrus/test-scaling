@@ -304,7 +304,7 @@ fn main_loop(
             }
             _ if is_fps_updated.read().unwrap().is_some() => {
                 if let Some(fps) = *is_fps_updated.read().unwrap() {
-                    pipeline.set_state(gst::State::Paused)?;
+                    // pipeline.set_state(gst::State::Paused)?;
 
                     let filter = pipeline
                         .by_name("filter")
@@ -319,7 +319,7 @@ fn main_loop(
 
                     filter.set_property("caps", &new_caps);
 
-                    pipeline.set_state(gst::State::Playing)?;
+                    // pipeline.set_state(gst::State::Playing)?;
                 }
             }
             _ => (),
