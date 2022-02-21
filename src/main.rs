@@ -94,8 +94,8 @@ fn main() {
                     };
                     let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
-                        let pl_weak = pipeline.downgrade();
-                        let is_fps_updated_weak = is_fps_updated.downgrade();
+                        let pl_weak = ObjectExt::downgrade(&pipeline);
+                        let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
@@ -125,7 +125,7 @@ fn main() {
                                     None => return,
                                 };
                                 // set_framerate(pipeline, fps);
-                                is_fps_updated.write().unwrap() = Some(fps);
+                                *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -302,7 +302,8 @@ fn main_loop(
                 }
                 .into());
             }
-            _ if let Some(fps) = *is_fps_updated.read().unwrap() => {
+            _ if is_fps_updated.read().unwrap().is_some() => {
+                let Some(fps) = *is_fps_updated.read().unwrap();
                 pipeline.set_state(gst::State::Paused)?;
 
                 let filter = pipeline
