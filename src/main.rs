@@ -107,7 +107,7 @@ fn main() {
                                     _ => {}
                                 }
                             })
-                            .on_tell(|fps: u8, _| {
+                            .on_tell(|fps: i32, _| {
                                 println!("Change fps");
                                 let pl_weak = pl_weak.clone();
                                 let pipeline = match pl_weak.upgrade() {
@@ -136,7 +136,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(1u8);
+        Distributor::named(url).tell_one(1);
     }
 
     Bastion::block_until_stopped();
