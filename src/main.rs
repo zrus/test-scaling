@@ -116,7 +116,8 @@ fn main() {
                                 };
 
                                 let pipeline = set_framerate(pipeline, fps);
-                                println!("{:?}", pipeline.current_state());
+                                drop(pipeline);
+                                drop(pl_weak);
                             });
                     }
                 })
