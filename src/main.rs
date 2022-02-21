@@ -248,7 +248,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     // Getting data out of the appsink is done by setting callbacks on it.
     // The appsink will then call those handlers, as soon as data is available.
-    let url  = url.to_owned();
+    let url = url.to_owned();
     appsink.set_callbacks(
         gst_app::AppSinkCallbacks::builder()
             // Add a handler to the "new-sample" signal.
@@ -293,42 +293,38 @@ fn main_loop(
                 if let Some(fps) = *is_fps_updated.read().unwrap() {
                     pipeline.set_state(gst::State::Paused)?;
 
+                    let capsfilter = pipeline
+                        .by_name("filter")
+                        .expect("Capsfilter not found")
+                        .downcast::<gst::Element>()
+                        .expect("Capsfilter is expected to be an appsink!");
+                    let queue_3 = pipeline
+                        .by_name("queue_3")
+                        .expect("Queue 3 not found")
+                        .downcast::<gst::Element>()
+                        .expect("Queue 3 is expected to be an appsink!");
                     let videorate = pipeline
                         .by_name("videorate")
-                        .expect("")
+                        .expect("Videorate not found")
                         .downcast::<gst::Element>()
-                        .expect("");
+                        .expect("Videorate is expected to be an appsink!");
 
-                    let filter = pipeline
-                        .by_name("filter")
-                        .expect("")
-                        .downcast::<gst::Element>()
-                        .expect("");
+                    gstreamer::Element::unlink(&capsfilter, &queue_3);
+                    gstreamer::Element::unlink(&videorate, &capsfilter);
+                    capsfilter.set_state(gstreamer::State::Null)?;
+                    pipeline.remove(&capsfilter)?;
 
-                    let vaapipostproc = pipeline
-                        .by_name("vaapipostproc")
-                        .expect("")
-                        .downcast::<gst::Element>()
-                        .expect("");
+                    let capsfilter_2 = gst::ElementFactory::make("capsfilter", Some("capsfilter"))?;
+                    let caps = gst::Caps::builder("video/x-raw")
+                        .field("framerate", gst::Fraction::new(fps, 1))
+                        .build();
+                    capsfilter_2.set_property("caps", &caps);
 
-                    let new_caps = gst::Caps::new_simple(
-                        "video/x-raw",
-                        &[("framerate", &gst::Fraction::new(fps, 1))],
-                    );
-
-                    gst::Element::unlink(&filter, &vaapipostproc);
-                    gst::Element::unlink(&videorate, &filter);
-
-                    filter.set_state(gst::State::Null)?;
-                    pipeline.remove(&filter);
-
-                    let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-                    filter.set_property("caps", &new_caps);
-
-                    pipeline.add(&filter);
-                    gst::Element::link(&videorate, &filter);
-                    gst::Element::link(&filter, &vaapipostproc);
-
+                    // videorate.link(&capsfilter_2).unwrap();
+                    // capsfilter_2.link(&queue_3).unwrap();
+                    pipeline.add(&capsfilter_2)?;
+                    gstreamer::Element::link(&videorate, &capsfilter_2)?;
+                    gstreamer::Element::link(&capsfilter_2, &queue_3)?;
                     *is_fps_updated.write().unwrap() = None;
 
                     pipeline.set_state(gst::State::Playing)?;
