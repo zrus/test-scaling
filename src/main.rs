@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use anyhow::Error;
 use bastion::prelude::*;
 use byte_slice_cast::*;
@@ -89,6 +91,7 @@ fn main() {
                         Ok(pl) => pl,
                         Err(_) => return Err(()),
                     };
+                    let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = pipeline.downgrade();
                         MessageHandler::new(ctx.recv().await?)
@@ -114,8 +117,8 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                let pipeline = set_framerate(pipeline, 1);
-                                set_framerate(pipeline, fps);
+                                // set_framerate(pipeline, fps);
+                                *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -262,7 +265,10 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     Ok(pipeline)
 }
 
-fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
+fn main_loop(
+    pipeline: gst::Pipeline,
+    is_fps_updated: Arc<RwLock<Option<i32>>>,
+) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
 
     let bus = pipeline
@@ -288,6 +294,24 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                     source: err.error(),
                 }
                 .into());
+            }
+            _ if *is_fps_updated.read().unwrap().is_some() => {
+                pipeline.set_state(gst::State::Paused)?;
+
+                let filter = pipeline
+                    .by_name("filter")
+                    .expect("Cannot find any element named filter")
+                    .downcast::<gst::Element>()
+                    .expect("Cannot downcast filter to element");
+
+                let new_caps = gst::Caps::new_simple(
+                    "video/x-raw",
+                    &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+                );
+
+                filter.set_property("caps", &new_caps);
+
+                pipeline.set_state(gst::State::Playing)?;
             }
             _ => (),
         }
