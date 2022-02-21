@@ -122,7 +122,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(1);
+        Distributor::named(url).tell_one(5);
     }
 
     Bastion::block_until_stopped();
@@ -256,7 +256,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    let pipeline = set_framerate(pipeline, 5);
+    let pipeline = set_framerate(pipeline, 1);
 
     Ok(pipeline)
 }
@@ -339,7 +339,6 @@ fn callback(
 }
 
 fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
-    pipeline.set_state(gst::State::Paused);
     let filter = pipeline
         .by_name("filter")
         .expect("Cannot find any element named filter")
@@ -353,6 +352,5 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
 
     filter.set_property("caps", &new_caps);
 
-    pipeline.set_state(gst::State::Playing);
     pipeline
 }
