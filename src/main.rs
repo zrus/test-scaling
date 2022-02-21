@@ -133,7 +133,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(3);
+        Distributor::named(url).tell_one(5);
     }
 
     Bastion::block_until_stopped();
@@ -165,7 +165,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
     let caps = gst::Caps::builder("video/x-raw")
-        .field("framerate", gst::Fraction::new(5, 1))
+        .field("framerate", gst::Fraction::new(1, 1))
         .build();
     capsfilter.set_property("caps", &caps);
     let sink = gst::ElementFactory::make("appsink", Some("sink"))?;
