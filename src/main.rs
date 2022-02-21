@@ -181,8 +181,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let sink2 = gst::ElementFactory::make("appsink", None)?;
 
     src.set_property("location", url);
-    queue1.set_property_from_str("leaky", "downstream");
-    queue2.set_property_from_str("leaky", "downstream");
+    queue1.set_property_from_str("leaky", "upstream");
+    queue2.set_property_from_str("leaky", "upstream");
     capsfilter.set_property("caps", &new_caps);
 
     // FULLSCREEN
@@ -340,7 +340,7 @@ fn main_loop(
 
                     let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
                     filter.set_property("caps", &new_caps);
-                    
+
                     pipeline.add(&filter);
                     videorate.link(&filter);
                     filter.link(&tee);
