@@ -185,16 +185,16 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
-    sink1.set_property_from_str("max-buffers", "100");
-    sink1.set_property_from_str("emit-signals", "false");
+    sink1.set_property_from_str("max-buffers", "1");
+    sink1.set_property_from_str("emit-signals", "true");
     sink1.set_property_from_str("drop", "true");
 
     // THUMNAIL
     vaapipostproc1.set_property_from_str("width", "720");
     vaapipostproc1.set_property_from_str("height", "480");
     sink2.set_property_from_str("name", "app2");
-    sink2.set_property_from_str("max-buffers", "100");
-    sink2.set_property_from_str("emit-signals", "false");
+    sink2.set_property_from_str("max-buffers", "1");
+    sink2.set_property_from_str("emit-signals", "true");
     sink2.set_property_from_str("drop", "true");
 
     // ADD MANY ELEMENTS TO PIPELINE AND LINK THEM TOGETHER
