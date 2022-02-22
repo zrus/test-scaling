@@ -83,6 +83,7 @@ fn main() {
     Bastion::start();
 
     for url in cam_list {
+        println!("{}", url);
         Bastion::children(move |children| {
             children
                 .with_distributor(Distributor::named(url))
@@ -143,7 +144,7 @@ fn main() {
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
-    println!("Pipeline {}", url);
+    // println!("Pipeline {}", url);
     gst::init()?;
 
     // Initialize new raw pipeline
