@@ -66,9 +66,9 @@ fn main() {
         // "rtsp://10.50.13.237/1/h264major",
         // "rtsp://10.50.13.238/1/h264major",
         // "rtsp://10.50.13.239/1/h264major",
-        "rtsp://10.50.13.240/1/h264major",
+        // "rtsp://10.50.13.240/1/h264major",
         // "rtsp://10.50.13.241/1/h264major",
-        // "rtsp://10.50.13.242/1/h264major",
+        "rtsp://10.50.13.242/1/h264major",
         // "rtsp://10.50.13.243/1/h264major",
         // "rtsp://10.50.13.244/1/h264major",
         // "rtsp://10.50.13.245/1/h264major",
@@ -153,19 +153,19 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize rtph264depay
     let rtph264depay = gst::ElementFactory::make("rtph264depay", None)?;
     // Initialize queue 1
-    let queue1 = gst::ElementFactory::make("queue", Some("queue1")).unwrap();
+    let queue1 = gst::ElementFactory::make("queue", Some("queue1"))?;
     // Initialize h264parse
     let h264parse = gst::ElementFactory::make("h264parse", None)?;
     // Initialize queue 2
-    let queue2 = gst::ElementFactory::make("queue", Some("queue2")).unwrap();
+    let queue2 = gst::ElementFactory::make("queue", Some("queue2"))?;
     // Initialize vaapih264dec
     let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)?;
     // Initialize queue 3
-    let queue3 = gst::ElementFactory::make("queue", Some("queue3")).unwrap();
+    let queue3 = gst::ElementFactory::make("queue", Some("queue3"))?;
     // Initialize tee
     let tee = gst::ElementFactory::make("tee", Some("tee"))?;
     // Initialize queue 4
-    let queue4 = gst::ElementFactory::make("queue", Some("queue4")).unwrap();
+    let queue4 = gst::ElementFactory::make("queue", Some("queue4"))?;
     // Initialize videorate
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
@@ -182,7 +182,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
     // Initialize queue 5
-    let queue5 = gst::ElementFactory::make("queue", Some("queue5")).unwrap();
+    let queue5 = gst::ElementFactory::make("queue", Some("queue5"))?;
     // Initialize videorate
     let videorate1 = gst::ElementFactory::make("videorate", Some("videorate1"))?;
     // Initialize capsfilter for videorate
