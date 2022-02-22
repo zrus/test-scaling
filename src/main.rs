@@ -97,7 +97,7 @@ fn main() {
                         let pl_weak = ObjectExt::downgrade(&pipeline);
                         let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
-                            .on_tell(|cmd: &str, _| {
+                            .on_tell(move |cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
                                 let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
@@ -118,7 +118,7 @@ fn main() {
                                     _ => {}
                                 }
                             })
-                            .on_tell(|fps: i32, _| {
+                            .on_tell(move |fps: i32, _| {
                                 println!("Change fps");
                                 let pl_weak = pl_weak.clone();
                                 let pipeline = match pl_weak.upgrade() {
