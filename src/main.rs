@@ -83,11 +83,11 @@ fn main() {
     Bastion::start();
 
     for url in cam_list {
-        println!("{}", url);
         Bastion::children(move |children| {
             children
                 .with_distributor(Distributor::named(url))
                 .with_exec(move |ctx| async move {
+                    println!("{}", url);
                     let pipeline = match create_pipeline(url) {
                         Ok(pl) => pl,
                         Err(_) => return Err(()),
