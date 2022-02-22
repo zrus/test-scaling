@@ -8,10 +8,9 @@ use gst::{
     element_error,
     glib::{self, clone::Downgrade},
     prelude::{
-        Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
-        GstObjectExt, ObjectExt, PadExt,
+        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
+        PadExt,
     },
-    PadExtManual,
 };
 use gst_app::AppSink;
 use gstreamer as gst;
@@ -92,14 +91,14 @@ fn main() {
                         Ok(pl) => pl,
                         Err(_) => return Err(()),
                     };
-                    let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
+                    let is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = ObjectExt::downgrade(&pipeline);
                         let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
-                                // let pl_weak = pl_weak.clone();
-                                // let is_fps_updated_weak = is_fps_updated_weak.clone();
+                                let pl_weak = pl_weak.clone();
+                                let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
