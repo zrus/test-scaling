@@ -183,7 +183,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize vaapijpegenc
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
-    let sink1 = gst::ElementFactory::make("appsink", None)?;
+    let sink1 = gst::ElementFactory::make("appsink", Some("app1"))?;
     // Initialize queue 5
     let queue5 = gst::ElementFactory::make("queue", Some("queue5"))?;
     // Initialize videorate
@@ -200,7 +200,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
-    let sink2 = gst::ElementFactory::make("appsink", None)?;
+    let sink2 = gst::ElementFactory::make("appsink", Some("app2"))?;
 
     src.set_property("location", url);
     queue1.set_property_from_str("leaky", "downstream");
@@ -214,13 +214,11 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     capsfilter3.set_property("caps", &new_caps3);
 
     // FULLSCREEN
-    sink1.set_property_from_str("name", "app1");
     sink1.set_property_from_str("max-buffers", "100");
     sink1.set_property_from_str("emit-signals", "true");
     sink1.set_property_from_str("drop", "true");
 
     // THUMNAIL
-    sink2.set_property_from_str("name", "app2");
     sink2.set_property_from_str("max-buffers", "100");
     sink2.set_property_from_str("emit-signals", "true");
     sink2.set_property_from_str("drop", "true");
@@ -274,7 +272,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     vaapih264dec.link(&queue3)?;
     queue3.link(&tee);
 
-    tee.link(&queue3)?;
+    tee.link(&queue4)?;
     queue4.link(&videorate);
     videorate.link(&capsfilter)?;
     capsfilter.link(&vaapipostproc)?;
@@ -282,12 +280,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     capsfilter1.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
 
-    tee.link(&queue4)?;
+    tee.link(&queue5)?;
     queue5.link(&videorate1);
     videorate1.link(&capsfilter2)?;
     capsfilter2.link(&vaapipostproc1)?;
     vaapipostproc1.link(&capsfilter3)?;
-    capsfilter3.link(&vaapipostproc1)?;
+    capsfilter3.link(&vaapijpegenc1)?;
     vaapijpegenc1.link(&sink2)?;
 
     let appsink1 = sink1
