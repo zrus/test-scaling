@@ -16,36 +16,6 @@ use gst_app::AppSink;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 
-pub enum Event {
-    FPS(u8),
-}
-
-impl Event {
-    const EVENT_NAME: &'static str = "change-filter";
-
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new_fps(fps: u8) -> gst::Event {
-        let s = gst::Structure::builder(Self::EVENT_NAME)
-            .field("fps", &fps)
-            .build();
-        gst::event::CustomUpstream::new(s)
-    }
-
-    pub fn parse(ev: &gst::EventRef) -> Option<Event> {
-        match ev.view() {
-            gst::EventView::CustomUpstream(e) => {
-                let s = match e.structure() {
-                    Some(s) if s.name() == Self::EVENT_NAME => s,
-                    _ => return None,
-                };
-                let fps = s.get::<u8>("fps").unwrap();
-                Some(Event::FPS(fps))
-            }
-            _ => None,
-        }
-    }
-}
-
 #[derive(Debug, Display, Error)]
 #[display(fmt = "Received error from {}: {} (debug: {:?})", src, error, debug)]
 struct ErrorMessage {
@@ -94,14 +64,11 @@ fn main() {
                             return Err(());
                         }
                     };
-                    let is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = ObjectExt::downgrade(&pipeline);
-                        // let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
-                                // let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
@@ -109,11 +76,6 @@ fn main() {
                                                 Some(pl) => pl,
                                                 None => return
                                             };
-                                            // let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                            //     Some(uf) => uf,
-                                            //     None => return
-                                            // };
-                                            // create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
                                             main_loop(pipeline);
                                         }};
                                     }
@@ -127,11 +89,6 @@ fn main() {
                                     None => return,
                                 };
                                 set_framerate(pipeline, fps);
-                                // let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                //     Some(uf) => uf,
-                                //     None => return,
-                                // };
-                                // *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -313,10 +270,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     Ok(pipeline)
 }
 
-fn main_loop(
-    pipeline: gst::Pipeline,
-    // is_fps_updated: Arc<RwLock<Option<i32>>>,
-) -> Result<(), Error> {
+fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
 
     let bus = pipeline
@@ -343,51 +297,7 @@ fn main_loop(
                 }
                 .into());
             }
-            // _ if is_fps_updated.read().unwrap().is_some() => {
-            //     if let Some(fps) = *is_fps_updated.read().unwrap() {
-            // pipeline.set_state(gst::State::Paused)?;
 
-            // let videorate = pipeline
-            //     .by_name("videorate")
-            //     .expect("")
-            //     .downcast::<gst::Element>()
-            //     .expect("");
-
-            // let filter = pipeline
-            //     .by_name("filter")
-            //     .expect("")
-            //     .downcast::<gst::Element>()
-            //     .expect("");
-
-            // let vaapipostproc = pipeline
-            //     .by_name("vaapipostproc")
-            //     .expect("")
-            //     .downcast::<gst::Element>()
-            //     .expect("");
-
-            // let new_caps = gst::Caps::new_simple(
-            //     "video/x-raw",
-            //     &[("framerate", &gst::Fraction::new(fps, 1))],
-            // );
-
-            // gst::Element::unlink(&filter, &vaapipostproc);
-            // gst::Element::unlink(&videorate, &filter);
-
-            // filter.set_state(gst::State::Null)?;
-            // pipeline.remove(&filter);
-
-            // let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-            // filter.set_property("caps", &new_caps);
-
-            // pipeline.add(&filter);
-            // gst::Element::link(&videorate, &filter);
-            // gst::Element::link(&filter, &vaapipostproc);
-
-            // *is_fps_updated.write().unwrap() = None;
-
-            // pipeline.set_state(gst::State::Playing)?;
-            //     }
-            // }
             _ => (),
         }
     }
@@ -441,6 +351,19 @@ fn callback(
 fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     let filter = pipeline
         .by_name("filter")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
+
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
+
+    filter.set_property("caps", &new_caps);
+
+    let filter = pipeline
+        .by_name("filter2")
         .expect("Cannot find any element named filter")
         .downcast::<gst::Element>()
         .expect("Cannot downcast filter to element");
