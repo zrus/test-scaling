@@ -91,10 +91,10 @@ fn main() {
                         Ok(pl) => pl,
                         Err(_) => return Err(()),
                     };
-                    let is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
+                    // let is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = ObjectExt::downgrade(&pipeline);
-                        let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
+                        // let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
@@ -106,12 +106,12 @@ fn main() {
                                                 Some(pl) => pl,
                                                 None => return
                                             };
-                                            let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                                Some(uf) => uf,
-                                                None => return
-                                            };
+                                            // let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                            //     Some(uf) => uf,
+                                            //     None => return
+                                            // };
                                             // create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
-                                            main_loop(pipeline, is_fps_updated);
+                                            main_loop(pipeline);
                                         }};
                                     }
                                     _ => {}
@@ -124,11 +124,11 @@ fn main() {
                                     None => return,
                                 };
                                 set_framerate(pipeline, fps);
-                                let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                    Some(uf) => uf,
-                                    None => return
-                                };
-                                *is_fps_updated.write().unwrap() = Some(fps);
+                                // let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                //     Some(uf) => uf,
+                                //     None => return,
+                                // };
+                                // *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -314,7 +314,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
 
 fn main_loop(
     pipeline: gst::Pipeline,
-    is_fps_updated: Arc<RwLock<Option<i32>>>,
+    // is_fps_updated: Arc<RwLock<Option<i32>>>,
 ) -> Result<(), Error> {
     pipeline.set_state(gst::State::Playing)?;
 
@@ -342,51 +342,51 @@ fn main_loop(
                 }
                 .into());
             }
-            _ if is_fps_updated.read().unwrap().is_some() => {
-                if let Some(fps) = *is_fps_updated.read().unwrap() {
-                    // pipeline.set_state(gst::State::Paused)?;
+            // _ if is_fps_updated.read().unwrap().is_some() => {
+            //     if let Some(fps) = *is_fps_updated.read().unwrap() {
+            // pipeline.set_state(gst::State::Paused)?;
 
-                    // let videorate = pipeline
-                    //     .by_name("videorate")
-                    //     .expect("")
-                    //     .downcast::<gst::Element>()
-                    //     .expect("");
+            // let videorate = pipeline
+            //     .by_name("videorate")
+            //     .expect("")
+            //     .downcast::<gst::Element>()
+            //     .expect("");
 
-                    // let filter = pipeline
-                    //     .by_name("filter")
-                    //     .expect("")
-                    //     .downcast::<gst::Element>()
-                    //     .expect("");
+            // let filter = pipeline
+            //     .by_name("filter")
+            //     .expect("")
+            //     .downcast::<gst::Element>()
+            //     .expect("");
 
-                    // let vaapipostproc = pipeline
-                    //     .by_name("vaapipostproc")
-                    //     .expect("")
-                    //     .downcast::<gst::Element>()
-                    //     .expect("");
+            // let vaapipostproc = pipeline
+            //     .by_name("vaapipostproc")
+            //     .expect("")
+            //     .downcast::<gst::Element>()
+            //     .expect("");
 
-                    // let new_caps = gst::Caps::new_simple(
-                    //     "video/x-raw",
-                    //     &[("framerate", &gst::Fraction::new(fps, 1))],
-                    // );
+            // let new_caps = gst::Caps::new_simple(
+            //     "video/x-raw",
+            //     &[("framerate", &gst::Fraction::new(fps, 1))],
+            // );
 
-                    // gst::Element::unlink(&filter, &vaapipostproc);
-                    // gst::Element::unlink(&videorate, &filter);
+            // gst::Element::unlink(&filter, &vaapipostproc);
+            // gst::Element::unlink(&videorate, &filter);
 
-                    // filter.set_state(gst::State::Null)?;
-                    // pipeline.remove(&filter);
+            // filter.set_state(gst::State::Null)?;
+            // pipeline.remove(&filter);
 
-                    // let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-                    // filter.set_property("caps", &new_caps);
+            // let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
+            // filter.set_property("caps", &new_caps);
 
-                    // pipeline.add(&filter);
-                    // gst::Element::link(&videorate, &filter);
-                    // gst::Element::link(&filter, &vaapipostproc);
+            // pipeline.add(&filter);
+            // gst::Element::link(&videorate, &filter);
+            // gst::Element::link(&filter, &vaapipostproc);
 
-                    *is_fps_updated.write().unwrap() = None;
+            // *is_fps_updated.write().unwrap() = None;
 
-                    // pipeline.set_state(gst::State::Playing)?;
-                }
-            }
+            // pipeline.set_state(gst::State::Playing)?;
+            //     }
+            // }
             _ => (),
         }
     }
