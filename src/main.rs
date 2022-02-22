@@ -437,7 +437,7 @@ fn callback(
     Ok(gst::FlowSuccess::Ok)
 }
 
-fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
+fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     let filter = pipeline
         .by_name("filter")
         .expect("Cannot find any element named filter")
@@ -450,6 +450,4 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
     );
 
     filter.set_property("caps", &new_caps);
-
-    pipeline
 }
