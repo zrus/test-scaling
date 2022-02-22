@@ -174,7 +174,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
     // Initialize capsfilter for vaapipostproc
     let capsfilter1 = gst::ElementFactory::make("capsfilter", Some("filter1"))?;
-    let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", 1920), ("height", 1080)]);
+    let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
     // Initialize vaapijpegenc
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
@@ -191,7 +191,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
-    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", 720), ("height", 480)]);
+    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
