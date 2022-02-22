@@ -98,7 +98,7 @@ fn main() {
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
-                                let is_fps_updated_weak = is_fps_updated_weak.clone();
+                                // let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
