@@ -126,6 +126,7 @@ fn main() {
                                     None => return,
                                 };
                                 set_framerate(pipeline, fps);
+                                let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 let is_fps_updated = match is_fps_updated_weak.upgrade() {
                                     Some(uf) => uf,
                                     None => return
