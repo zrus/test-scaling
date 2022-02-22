@@ -92,14 +92,14 @@ fn main() {
                         Ok(pl) => pl,
                         Err(_) => return Err(()),
                     };
-                    // let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
+                    let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
                         let pl_weak = ObjectExt::downgrade(&pipeline);
-                        // let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
+                        let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
-                                // let is_fps_updated_weak = is_fps_updated_weak.clone();
+                                let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
@@ -112,7 +112,7 @@ fn main() {
                                             //     None => return
                                             // };
                                             // create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
-                                            main_loop(pipeline);
+                                            main_loop(pipeline, is_fps_updated);
                                         }};
                                     }
                                     _ => {}
@@ -380,7 +380,7 @@ fn main_loop(
                     // gst::Element::link(&videorate, &filter);
                     // gst::Element::link(&filter, &vaapipostproc);
 
-                    // *is_fps_updated.write().unwrap() = None;
+                    *is_fps_updated.write().unwrap() = None;
 
                     // pipeline.set_state(gst::State::Playing)?;
                 }
