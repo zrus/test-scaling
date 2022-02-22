@@ -107,10 +107,10 @@ fn main() {
                                                 Some(pl) => pl,
                                                 None => return
                                             };
-                                            // let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                            //     Some(uf) => uf,
-                                            //     None => return
-                                            // };
+                                            let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                                Some(uf) => uf,
+                                                None => return
+                                            };
                                             // create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
                                             main_loop(pipeline, is_fps_updated);
                                         }};
@@ -126,7 +126,11 @@ fn main() {
                                     None => return,
                                 };
                                 set_framerate(pipeline, fps);
-                                // *is_fps_updated.write().unwrap() = Some(fps);
+                                let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                    Some(uf) => uf,
+                                    None => return
+                                };
+                                *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
