@@ -88,30 +88,31 @@ fn main() {
             children
                 .with_distributor(Distributor::named(url))
                 .with_exec(move |ctx| async move {
-                    // let pipeline = match create_pipeline(url) {
-                    //     Ok(pl) => pl,
-                    //     Err(_) => return Err(()),
-                    // };
-                    let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
+                    let pipeline = match create_pipeline(url) {
+                        Ok(pl) => pl,
+                        Err(_) => return Err(()),
+                    };
+                    // let mut is_fps_updated: Arc<RwLock<Option<i32>>> = Arc::new(RwLock::new(None));
                     loop {
-                        // let pl_weak = ObjectExt::downgrade(&pipeline);
-                        let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
+                        let pl_weak = ObjectExt::downgrade(&pipeline);
+                        // let is_fps_updated_weak = Downgrade::downgrade(&is_fps_updated);
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
-                                // let pl_weak = pl_weak.clone();
-                                let is_fps_updated_weak = is_fps_updated_weak.clone();
+                                let pl_weak = pl_weak.clone();
+                                // let is_fps_updated_weak = is_fps_updated_weak.clone();
                                 match cmd {
                                     "start" => {
                                         spawn! { async move {
-                                            // let pipeline = match pl_weak.upgrade() {
-                                            //     Some(pl) => pl,
-                                            //     None => return
-                                            // };
-                                            let is_fps_updated = match is_fps_updated_weak.upgrade() {
-                                                Some(uf) => uf,
+                                            let pipeline = match pl_weak.upgrade() {
+                                                Some(pl) => pl,
                                                 None => return
                                             };
-                                            create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
+                                            // let is_fps_updated = match is_fps_updated_weak.upgrade() {
+                                            //     Some(uf) => uf,
+                                            //     None => return
+                                            // };
+                                            // create_pipeline(url).and_then(|pipeline| main_loop(pipeline, is_fps_updated));
+                                            main_loop(pipeline);
                                         }};
                                     }
                                     _ => {}
@@ -119,13 +120,13 @@ fn main() {
                             })
                             .on_tell(|fps: i32, _| {
                                 println!("Change fps");
-                                // let pl_weak = pl_weak.clone();
-                                // let pipeline = match pl_weak.upgrade() {
-                                //     Some(pl) => pl,
-                                //     None => return,
-                                // };
-                                // set_framerate(pipeline, fps);
-                                *is_fps_updated.write().unwrap() = Some(fps);
+                                let pl_weak = pl_weak.clone();
+                                let pipeline = match pl_weak.upgrade() {
+                                    Some(pl) => pl,
+                                    None => return,
+                                };
+                                set_framerate(pipeline, fps);
+                                // *is_fps_updated.write().unwrap() = Some(fps);
                             });
                     }
                 })
@@ -148,17 +149,21 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize RTSP source
     let src = gst::ElementFactory::make("rtspsrc", Some("src"))?;
     // Initialize rtph264depay
-    let rtph264depay = gst::ElementFactory::make("rtph264depay", Some("depay"))?;
+    let rtph264depay = gst::ElementFactory::make("rtph264depay", None)?;
     // Initialize queue 1
     let queue1 = gst::ElementFactory::make("queue", Some("queue1")).unwrap();
     // Initialize h264parse
     let h264parse = gst::ElementFactory::make("h264parse", None)?;
-    // Initialize tee
-    let tee = gst::ElementFactory::make("tee", Some("tee"))?;
     // Initialize queue 2
     let queue2 = gst::ElementFactory::make("queue", Some("queue2")).unwrap();
     // Initialize vaapih264dec
     let vaapih264dec = gst::ElementFactory::make("vaapih264dec", None)?;
+    // Initialize queue 3
+    let queue3 = gst::ElementFactory::make("queue", Some("queue3")).unwrap();
+    // Initialize tee
+    let tee = gst::ElementFactory::make("tee", Some("tee"))?;
+    // Initialize queue 4
+    let queue4 = gst::ElementFactory::make("queue", Some("queue4")).unwrap();
     // Initialize videorate
     let videorate = gst::ElementFactory::make("videorate", Some("videorate"))?;
     // Initialize capsfilter for videorate
@@ -167,33 +172,51 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
+    // Initialize capsfilter for vaapipostproc
+    let capsfilter1 = gst::ElementFactory::make("capsfilter", Some("filter1"))?;
+    let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", 1920), ("height", 1080)]);
     // Initialize vaapijpegenc
     let vaapijpegenc = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize appsink 1
     let sink1 = gst::ElementFactory::make("appsink", None)?;
+    // Initialize queue 5
+    let queue5 = gst::ElementFactory::make("queue", Some("queue5")).unwrap();
+    // Initialize videorate
+    let videorate1 = gst::ElementFactory::make("videorate", Some("videorate1"))?;
+    // Initialize capsfilter for videorate
+    let capsfilter2 = gst::ElementFactory::make("capsfilter", Some("filter2"))?;
+    let new_caps2 =
+        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
     // Initialize vaapipostproc
-    let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", None)?;
+    let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
+    // Initialize capsfilter for vaapipostproc1
+    let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
+    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", 720), ("height", 480)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
     let sink2 = gst::ElementFactory::make("appsink", None)?;
 
     src.set_property("location", url);
-    queue1.set_property_from_str("leaky", "upstream");
-    queue2.set_property_from_str("leaky", "upstream");
+    queue1.set_property_from_str("leaky", "downstream");
+    queue2.set_property_from_str("leaky", "downstream");
+    queue3.set_property_from_str("leaky", "downstream");
+    queue4.set_property_from_str("leaky", "downstream");
+    queue5.set_property_from_str("leaky", "downstream");
     capsfilter.set_property("caps", &new_caps);
+    capsfilter1.set_property("caps", &new_caps1);
+    capsfilter2.set_property("caps", &new_caps2);
+    capsfilter3.set_property("caps", &new_caps3);
 
     // FULLSCREEN
     sink1.set_property_from_str("name", "app1");
-    sink1.set_property_from_str("max-buffers", "1");
+    sink1.set_property_from_str("max-buffers", "100");
     sink1.set_property_from_str("emit-signals", "true");
     sink1.set_property_from_str("drop", "true");
 
     // THUMNAIL
-    vaapipostproc1.set_property_from_str("width", "720");
-    vaapipostproc1.set_property_from_str("height", "480");
     sink2.set_property_from_str("name", "app2");
-    sink2.set_property_from_str("max-buffers", "1");
+    sink2.set_property_from_str("max-buffers", "100");
     sink2.set_property_from_str("emit-signals", "true");
     sink2.set_property_from_str("drop", "true");
 
@@ -205,15 +228,22 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         &h264parse,
         &queue2,
         &vaapih264dec,
+        &queue3,
+        &tee,
+        &queue4,
         &videorate,
         &capsfilter,
-        // &tee,
         &vaapipostproc,
+        &capsfilter1,
         &vaapijpegenc,
         &sink1,
-        // &vaapipostproc1,
-        // &vaapijpegenc1,
-        // &sink2,
+        &queue5,
+        &videorate1,
+        &capsfilter2,
+        &vaapipostproc1,
+        &capsfilter3,
+        &vaapijpegenc1,
+        &sink2,
     ];
     pipeline.add_many(elements).expect("");
 
@@ -236,25 +266,32 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue1.link(&h264parse)?;
     h264parse.link(&queue2)?;
     queue2.link(&vaapih264dec)?;
-    vaapih264dec.link(&videorate)?;
+    vaapih264dec.link(&queue3)?;
+    queue3.link(&tee);
+
+    tee.link(&queue3)?;
+    queue4.link(&videorate);
     videorate.link(&capsfilter)?;
-    // capsfilter.link(&tee)?;
     capsfilter.link(&vaapipostproc)?;
-    // tee.link(&vaapipostproc)?;
-    vaapipostproc.link(&vaapijpegenc)?;
+    vaapipostproc.link(&capsfilter1)?;
+    capsfilter1.link(&vaapijpegenc)?;
     vaapijpegenc.link(&sink1)?;
 
-    // tee.link(&vaapipostproc1)?;
-    // vaapipostproc1.link(&vaapijpegenc1)?;
-    // vaapijpegenc1.link(&sink2)?;
+    tee.link(&queue4)?;
+    queue5.link(&videorate1);
+    videorate1.link(&capsfilter2)?;
+    capsfilter2.link(&vaapipostproc1)?;
+    vaapipostproc1.link(&capsfilter3)?;
+    capsfilter3.link(&vaapipostproc1)?;
+    vaapijpegenc1.link(&sink2)?;
 
     let appsink1 = sink1
         .dynamic_cast::<gst_app::AppSink>()
         .expect("Sink element is expected to be an appsink!");
 
-    // let appsink2 = sink2
-    //     .dynamic_cast::<gst_app::AppSink>()
-    //     .expect("Sink element is expected to be an appsink!");
+    let appsink2 = sink2
+        .dynamic_cast::<gst_app::AppSink>()
+        .expect("Sink element is expected to be an appsink!");
 
     let url1 = url.to_owned();
     appsink1.set_callbacks(
@@ -263,12 +300,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
             .build(),
     );
 
-    // let url2 = url.to_owned();
-    // appsink2.set_callbacks(
-    //     gst_app::AppSinkCallbacks::builder()
-    //         .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
-    //         .build(),
-    // );
+    let url2 = url.to_owned();
+    appsink2.set_callbacks(
+        gst_app::AppSinkCallbacks::builder()
+            .new_sample(move |appsink| callback(appsink, &url2, "thumbnail"))
+            .build(),
+    );
 
     Ok(pipeline)
 }
@@ -305,47 +342,47 @@ fn main_loop(
             }
             _ if is_fps_updated.read().unwrap().is_some() => {
                 if let Some(fps) = *is_fps_updated.read().unwrap() {
-                    pipeline.set_state(gst::State::Paused)?;
+                    // pipeline.set_state(gst::State::Paused)?;
 
-                    let videorate = pipeline
-                        .by_name("videorate")
-                        .expect("")
-                        .downcast::<gst::Element>()
-                        .expect("");
+                    // let videorate = pipeline
+                    //     .by_name("videorate")
+                    //     .expect("")
+                    //     .downcast::<gst::Element>()
+                    //     .expect("");
 
-                    let filter = pipeline
-                        .by_name("filter")
-                        .expect("")
-                        .downcast::<gst::Element>()
-                        .expect("");
+                    // let filter = pipeline
+                    //     .by_name("filter")
+                    //     .expect("")
+                    //     .downcast::<gst::Element>()
+                    //     .expect("");
 
-                    let vaapipostproc = pipeline
-                        .by_name("vaapipostproc")
-                        .expect("")
-                        .downcast::<gst::Element>()
-                        .expect("");
+                    // let vaapipostproc = pipeline
+                    //     .by_name("vaapipostproc")
+                    //     .expect("")
+                    //     .downcast::<gst::Element>()
+                    //     .expect("");
 
-                    let new_caps = gst::Caps::new_simple(
-                        "video/x-raw",
-                        &[("framerate", &gst::Fraction::new(fps, 1))],
-                    );
+                    // let new_caps = gst::Caps::new_simple(
+                    //     "video/x-raw",
+                    //     &[("framerate", &gst::Fraction::new(fps, 1))],
+                    // );
 
-                    gst::Element::unlink(&filter, &vaapipostproc);
-                    gst::Element::unlink(&videorate, &filter);
+                    // gst::Element::unlink(&filter, &vaapipostproc);
+                    // gst::Element::unlink(&videorate, &filter);
 
-                    filter.set_state(gst::State::Null)?;
-                    pipeline.remove(&filter);
+                    // filter.set_state(gst::State::Null)?;
+                    // pipeline.remove(&filter);
 
-                    let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
-                    filter.set_property("caps", &new_caps);
+                    // let filter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
+                    // filter.set_property("caps", &new_caps);
 
-                    pipeline.add(&filter);
-                    gst::Element::link(&videorate, &filter);
-                    gst::Element::link(&filter, &vaapipostproc);
+                    // pipeline.add(&filter);
+                    // gst::Element::link(&videorate, &filter);
+                    // gst::Element::link(&filter, &vaapipostproc);
 
-                    *is_fps_updated.write().unwrap() = None;
+                    // *is_fps_updated.write().unwrap() = None;
 
-                    pipeline.set_state(gst::State::Playing)?;
+                    // pipeline.set_state(gst::State::Playing)?;
                 }
             }
             _ => (),
@@ -365,7 +402,6 @@ fn callback(
     screen_type: &str,
 ) -> Result<gst::FlowSuccess, gst::FlowError> {
     let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
-    println!("1");
 
     let buffer = sample.buffer().ok_or_else(|| {
         element_error!(
@@ -375,7 +411,6 @@ fn callback(
         );
         gst::FlowError::Error
     })?;
-    println!("2");
 
     let map = buffer.map_readable().map_err(|_| {
         element_error!(
@@ -385,7 +420,6 @@ fn callback(
         );
         gst::FlowError::Error
     })?;
-    println!("3");
 
     let _samples = map.as_slice_of::<u8>().map_err(|_| {
         element_error!(
