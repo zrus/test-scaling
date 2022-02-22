@@ -144,7 +144,7 @@ fn main() {
 }
 
 fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
-    // println!("Pipeline {}", url);
+    println!("Pipeline {}", url);
     gst::init()?;
 
     // Initialize new raw pipeline
