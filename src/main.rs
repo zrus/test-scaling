@@ -96,7 +96,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        Distributor::named(url).tell_one(3);
+        Distributor::named(url).tell_one(5);
     }
 
     Bastion::block_until_stopped();
@@ -131,7 +131,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize capsfilter for videorate
     let capsfilter = gst::ElementFactory::make("capsfilter", Some("filter"))?;
     let new_caps =
-        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
+        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
     // Initialize capsfilter for vaapipostproc
@@ -148,7 +148,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     // Initialize capsfilter for videorate
     let capsfilter2 = gst::ElementFactory::make("capsfilter", Some("filter2"))?;
     let new_caps2 =
-        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(5, 1))]);
+        gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
     // Initialize capsfilter for vaapipostproc1
@@ -362,16 +362,16 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
 
     filter.set_property("caps", &new_caps);
 
-    // let filter = pipeline
-    //     .by_name("filter2")
-    //     .expect("Cannot find any element named filter")
-    //     .downcast::<gst::Element>()
-    //     .expect("Cannot downcast filter to element");
+    let filter = pipeline
+        .by_name("filter2")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
 
-    // let new_caps = gst::Caps::new_simple(
-    //     "video/x-raw",
-    //     &[("framerate", &gst::Fraction::new(new_framerate, 1))],
-    // );
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
 
-    // filter.set_property("caps", &new_caps);
+    filter.set_property("caps", &new_caps);
 }
