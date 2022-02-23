@@ -134,6 +134,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
+    vaapipostproc.set_property("width", &1920u32);
+    vaapipostproc.set_property("height", &1080u32);
     // Initialize capsfilter for vaapipostproc
     let capsfilter1 = gst::ElementFactory::make("capsfilter", Some("filter1"))?;
     let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
@@ -151,10 +153,12 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
+    vaapipostproc1.set_property("width", &720u32);
+    vaapipostproc1.set_property("height", &480u32);
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
     let (width, height) = (720u32, 480u32);
-    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &(width as i32)), ("height", &(height as i32))]);
+    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
@@ -167,9 +171,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue4.set_property_from_str("leaky", "downstream");
     queue5.set_property_from_str("leaky", "downstream");
     capsfilter.set_property("caps", &new_caps);
-    capsfilter1.set_property("caps", &new_caps1);
+    // capsfilter1.set_property("caps", &new_caps1);
     capsfilter2.set_property("caps", &new_caps2);
-    capsfilter3.set_property("caps", &new_caps3);
+    // capsfilter3.set_property("caps", &new_caps3);
 
     // FULLSCREEN
     sink1.set_property_from_str("max-buffers", "100");
