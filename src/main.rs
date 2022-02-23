@@ -401,8 +401,8 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
             None => return gst::PadProbeReturn::__Unknown(0),
         };
 
-        match info.id {
-            Some(id) => pad.remove_probe(id),
+        match &info.id {
+            Some(id) => pad.remove_probe(*id),
             None => return gst::PadProbeReturn::__Unknown(0),
         }
 
@@ -434,7 +434,7 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
                     }
                 }
 
-                match info.id {
+                match &info.id {
                     Some(id) => pad.remove_probe(id),
                     None => return gst::PadProbeReturn::__Unknown(0),
                 }
