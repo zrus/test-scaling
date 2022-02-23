@@ -153,7 +153,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
-    let (width, height) = (720u32, 480u32);
     let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
