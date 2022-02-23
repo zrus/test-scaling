@@ -96,7 +96,7 @@ fn main() {
         .expect("");
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(5));
-        // Distributor::named(url).tell_one(5);
+        Distributor::named(url).tell_one(5);
     }
 
     Bastion::block_until_stopped();
