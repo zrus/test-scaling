@@ -134,8 +134,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
-    vaapipostproc.set_property("width", &1920i32);
-    vaapipostproc.set_property("height", &1080i32);
     // Initialize capsfilter for vaapipostproc
     let capsfilter1 = gst::ElementFactory::make("capsfilter", Some("filter1"))?;
     let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
@@ -153,8 +151,6 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
-    vaapipostproc1.set_property("width", &720u32);
-    vaapipostproc1.set_property("height", &480u32);
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
     let (width, height) = (720u32, 480u32);
