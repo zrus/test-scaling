@@ -95,9 +95,9 @@ fn main() {
         })
         .expect("");
         Distributor::named(url).tell_one("start");
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        std::thread::sleep(std::time::Duration::from_secs(8));
         Distributor::named(url).tell_one(5);
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        std::thread::sleep(std::time::Duration::from_secs(8));
         Distributor::named(url).tell_one(1);
     }
 
@@ -351,7 +351,7 @@ fn callback(
 
 fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     let filter = pipeline
-        .by_name("filter2")
+        .by_name("filter")
         .expect("Cannot find any element named filter")
         .downcast::<gst::Element>()
         .expect("Cannot downcast filter to element");
@@ -364,19 +364,9 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     filter.set_property("caps", &new_caps);
 
     let filter = pipeline
-        .by_name("filter3")
-        .expect("Cannot find any element named filter")
-        .downcast::<gst::Element>()
-        .expect("Cannot downcast filter to element");
-
-    let new_caps = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
-
-    filter.set_property("caps", &new_caps);
-
-    let filter = pipeline
         .by_name("filter2")
         .expect("Cannot find any element named filter")
-        .downcast()
+        .downcast::<gst::Element>()
         .expect("Cannot downcast filter to element");
 
     let new_caps = gst::Caps::new_simple(
