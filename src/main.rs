@@ -167,9 +167,9 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     queue4.set_property_from_str("leaky", "downstream");
     queue5.set_property_from_str("leaky", "downstream");
     capsfilter.set_property("caps", &new_caps);
-    // capsfilter1.set_property("caps", &new_caps1);
+    capsfilter1.set_property("caps", &new_caps1);
     capsfilter2.set_property("caps", &new_caps2);
-    // capsfilter3.set_property("caps", &new_caps3);
+    capsfilter3.set_property("caps", &new_caps3);
 
     // FULLSCREEN
     sink1.set_property_from_str("max-buffers", "100");
