@@ -11,7 +11,7 @@ use gst::{
         Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
         PadExt,
     },
-    PadExtManual,
+    Object, PadExtManual,
 };
 use gst_app::AppSink;
 use gstreamer as gst;
@@ -395,7 +395,7 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
 
     let queue_src_pad = queue.static_pad("src").expect("cannot get src pad");
 
-    let pl_weak = pipeline.downgrade();
+    let pl_weak = ObjectExt::downgrade(&pipeline);
 
     queue_src_pad.add_probe(gst::PadProbeType::BLOCK_DOWNSTREAM, move |pad, info| {
         let pipeline = match pl_weak.upgrade() {
@@ -445,7 +445,7 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
                 let new_filter = gst::ElementFactory::make("capsfilter", Some(filter2)).unwrap();
                 let new_caps = gst::Caps::new_simple(
                     "video/x-raw",
-                    &[("framerate"), gst::Fraction::new(new_framerate, 1)],
+                    &[("framerate", gst::Fraction::new(new_framerate, 1))],
                 );
                 new_filter.set_property("caps", &new_caps);
                 pipeline.add(&new_filter);
