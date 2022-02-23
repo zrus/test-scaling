@@ -425,8 +425,10 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
                     None => return gst::PadProbeReturn::__Unknown(0),
                 };
 
-                if gst::EventType::from(info.data.unwrap()) != gst::EventType::Eos {
-                    return gst::PadProbeReturn::Pass;
+                if let Some(gst::PadProbeData::Event(ref ev)) = info.data {
+                    if ev.type_() != gst::EventType::Eos {
+                        return gst::PadProbeReturn::Pass;
+                    }
                 }
 
                 pad.remove_probe(info.id.unwrap());
