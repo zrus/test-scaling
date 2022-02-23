@@ -401,7 +401,7 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
             None => return gst::PadProbeReturn::__Unknown(0),
         };
 
-        pad.remove_probe(info.id.unwrap());
+        pad.remove_probe(info.id.as_ref().unwrap());
 
         let prev_elm = pipeline
             .by_name(videorate1_name)
@@ -431,7 +431,7 @@ fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::
                     }
                 }
 
-                pad.remove_probe(info.id.unwrap());
+                pad.remove_probe(info.id.as_ref().unwrap());
 
                 let cur_elm = pipeline
                     .by_name(filter2)
