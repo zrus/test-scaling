@@ -11,6 +11,7 @@ use gst::{
         Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
         PadExt,
     },
+    PadExtManual,
 };
 use gst_app::AppSink;
 use gstreamer as gst;
@@ -88,7 +89,8 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                set_framerate(pipeline, fps);
+                                let pipeline = set_framerate(pipeline, fps);
+                                set_framerate_thumbnail(pipeline, fps);
                             });
                     }
                 })
@@ -98,7 +100,7 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(8));
         Distributor::named(url).tell_one(5);
         std::thread::sleep(std::time::Duration::from_secs(8));
-        Distributor::named(url).tell_one(1);
+        Distributor::named(url).tell_one(3);
     }
 
     Bastion::block_until_stopped();
@@ -155,7 +157,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
-    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
+    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
@@ -349,7 +351,7 @@ fn callback(
     Ok(gst::FlowSuccess::Ok)
 }
 
-fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
+fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
     let filter = pipeline
         .by_name("filter")
         .expect("Cannot find any element named filter")
@@ -375,4 +377,99 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     );
 
     filter.set_property("caps", &new_caps);
+
+    pipeline
+}
+
+fn set_framerate_thumbnail(pipeline: gst::Pipeline, new_framerate: i32) -> gst::Pipeline {
+    let queue5_name = "queue5";
+    let videorate1_name = "videorate1";
+    let filter2 = "filter2";
+    let vaapipostproc1_name = "vaapipostproc1";
+
+    let queue = pipeline
+        .by_name(queue5_name)
+        .expect("cannot get element")
+        .downcast::<gst::Element>()
+        .expect("cannot downcast");
+
+    let queue_src_pad = queue.static_pad("src").expect("cannot get src pad");
+
+    let pl_weak = pipeline.downgrade();
+
+    queue_src_pad.add_probe(gst::PadProbeType::BLOCK_DOWNSTREAM, move |pad, info| {
+        let pipeline = match pl_weak.upgrade() {
+            Some(pl) => pl,
+            None => return gst::PadProbeReturn::__Unknown(0),
+        };
+
+        pad.remove_probe(info.id.unwrap());
+
+        let prev_elm = pipeline
+            .by_name(videorate1_name)
+            .expect("cannot get element")
+            .downcast::<gst::Element>()
+            .expect("cannot downcast");
+
+        let pl_weak = pipeline.downgrade();
+        let prev_elm_weak = prev_elm.downgrade();
+
+        let prev_elm_src_pad = prev_elm.static_pad("src").expect("cannot get src pad");
+        prev_elm_src_pad.add_probe(
+            gst::PadProbeType::BLOCK | gst::PadProbeType::EVENT_DOWNSTREAM,
+            move |pad, info| {
+                let pipeline = match pl_weak.upgrade() {
+                    Some(pl) => pl,
+                    None => return gst::PadProbeReturn::__Unknown(0),
+                };
+                let prev_elm = match prev_elm_weak.upgrade() {
+                    Some(e) => e,
+                    None => return gst::PadProbeReturn::__Unknown(0),
+                };
+
+                if gst::EventType::from(info.data.unwrap()) != gst::EventType::Eos {
+                    return gst::PadProbeReturn::Pass;
+                }
+
+                pad.remove_probe(info.id.unwrap());
+
+                let cur_elm = pipeline
+                    .by_name(filter2)
+                    .expect("cannot get element")
+                    .downcast::<gst::Element>()
+                    .expect("cannot downcast");
+
+                cur_elm.set_state(gst::State::Null);
+
+                pipeline.remove(&cur_elm);
+                let new_filter = gst::ElementFactory::make("capsfilter", Some(filter2)).unwrap();
+                let new_caps = gst::Caps::new_simple(
+                    "video/x-raw",
+                    &[("framerate"), gst::Fraction::new(new_framerate, 1)],
+                );
+                new_filter.set_property("caps", &new_caps);
+                pipeline.add(&new_filter);
+
+                let next_elm = pipeline
+                    .by_name(vaapipostproc1_name)
+                    .expect("cannot get element")
+                    .downcast::<gst::Element>()
+                    .expect("cannot downcast");
+
+                prev_elm.link(&new_filter);
+                new_filter.link(&next_elm);
+
+                new_filter.set_state(gst::State::Playing);
+
+                gst::PadProbeReturn::Drop
+            },
+        );
+
+        let prev_elm_sink_pad = prev_elm.static_pad("sink").expect("cannot get sink pad");
+        prev_elm_sink_pad.send_event(gst::event::Eos::new());
+
+        gst::PadProbeReturn::Ok
+    });
+
+    pipeline
 }
