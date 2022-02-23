@@ -155,7 +155,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let vaapipostproc1 = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc1"))?;
     // Initialize capsfilter for vaapipostproc1
     let capsfilter3 = gst::ElementFactory::make("capsfilter", Some("filter3"))?;
-    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
+    let new_caps3 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
     // Initialize vaapijpegenc
     let vaapijpegenc1 = gst::ElementFactory::make("vaapijpegenc", None)?;
     // Initialize AppSink 2
@@ -373,16 +373,16 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
 
     filter.set_property("caps", &new_caps);
 
-    // let filter = pipeline
-    //     .by_name("filter2")
-    //     .expect("Cannot find any element named filter")
-    //     .downcast::<gst:Element>()
-    //     .expect("Cannot downcast filter to element");
+    let filter = pipeline
+        .by_name("filter2")
+        .expect("Cannot find any element named filter")
+        .downcast()
+        .expect("Cannot downcast filter to element");
 
-    // let new_caps = gst::Caps::new_simple(
-    //     "video/x-raw",
-    //     &[("framerate", &gst::Fraction::new(new_framerate, 1))],
-    // );
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
 
-    // filter.set_property("caps", &new_caps);
+    filter.set_property("caps", &new_caps);
 }
