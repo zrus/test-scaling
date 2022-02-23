@@ -98,7 +98,7 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(8));
         Distributor::named(url).tell_one(5);
         std::thread::sleep(std::time::Duration::from_secs(8));
-        Distributor::named(url).tell_one(1);
+        Distributor::named(url).tell_one(3);
     }
 
     Bastion::block_until_stopped();
@@ -363,16 +363,16 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
 
     filter.set_property("caps", &new_caps);
 
-    let filter = pipeline
-        .by_name("filter2")
-        .expect("Cannot find any element named filter")
-        .downcast::<gst::Element>()
-        .expect("Cannot downcast filter to element");
+    // let filter = pipeline
+    //     .by_name("filter2")
+    //     .expect("Cannot find any element named filter")
+    //     .downcast::<gst::Element>()
+    //     .expect("Cannot downcast filter to element");
 
-    let new_caps = gst::Caps::new_simple(
-        "video/x-raw",
-        &[("framerate", &gst::Fraction::new(new_framerate, 1))],
-    );
+    // let new_caps = gst::Caps::new_simple(
+    //     "video/x-raw",
+    //     &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    // );
 
-    filter.set_property("caps", &new_caps);
+    // filter.set_property("caps", &new_caps);
 }
