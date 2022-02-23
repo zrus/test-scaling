@@ -351,7 +351,7 @@ fn callback(
 
 fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
     let filter = pipeline
-        .by_name("filter")
+        .by_name("filter2")
         .expect("Cannot find any element named filter")
         .downcast::<gst::Element>()
         .expect("Cannot downcast filter to element");
@@ -363,10 +363,20 @@ fn set_framerate(pipeline: gst::Pipeline, new_framerate: i32) {
 
     filter.set_property("caps", &new_caps);
 
+    let filter = pipeline
+        .by_name("filter3")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
+
+    let new_caps = gst::Caps::new_simple("video/x-raw", &[("width", &720), ("height", &480)]);
+
+    filter.set_property("caps", &new_caps);
+
     // let filter = pipeline
     //     .by_name("filter2")
     //     .expect("Cannot find any element named filter")
-    //     .downcast::<gst::Element>()
+    //     .downcast::<gst:Element>()
     //     .expect("Cannot downcast filter to element");
 
     // let new_caps = gst::Caps::new_simple(
