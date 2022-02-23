@@ -134,8 +134,8 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
         gst::Caps::new_simple("video/x-raw", &[("framerate", &gst::Fraction::new(1, 1))]);
     // Initialize vaapipostproc
     let vaapipostproc = gst::ElementFactory::make("vaapipostproc", Some("vaapipostproc"))?;
-    vaapipostproc.set_property("width", &1920u32);
-    vaapipostproc.set_property("height", &1080u32);
+    vaapipostproc.set_property("width", &1920i32);
+    vaapipostproc.set_property("height", &1080i32);
     // Initialize capsfilter for vaapipostproc
     let capsfilter1 = gst::ElementFactory::make("capsfilter", Some("filter1"))?;
     let new_caps1 = gst::Caps::new_simple("video/x-raw", &[("width", &1920), ("height", &1080)]);
