@@ -301,6 +301,7 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
 
     use gst::MessageView;
     for msg in bus.iter_timed(gst::ClockTime::NONE) {
+        println!("{}", msg);
         match msg.view() {
             MessageView::Eos(msg) => {
                 println!("Got Eos message: {:?}, done", msg);
