@@ -86,18 +86,29 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                let pipeline = set_framerate_fullscreen(pipeline, fps);
+                                // let pipeline = set_framerate_fullscreen(pipeline, fps);
                                 // set_framerate_thumbnail(pipeline, fps);
+                            })
+                            .on_tell(|resolution: (i32, i32), _| {
+                                println!("Change resolution");
+                                let pipeline = match pl_weak.upgrade() {
+                                    Some(pl) => pl,
+                                    None => return,
+                                };
+                                let pipeline = set_resolution_fullscreen(pipeline, resolution);
+                                // set_resolution_fullscreen(pipeline, resolution);
                             });
                     }
                 })
         })
         .expect("");
         Distributor::named(url).tell_one("start");
+        // std::thread::sleep(std::time::Duration::from_secs(8));
+        // Distributor::named(url).tell_one(5);
+        // std::thread::sleep(std::time::Duration::from_secs(8));
+        // Distributor::named(url).tell_one(3);
         std::thread::sleep(std::time::Duration::from_secs(8));
-        Distributor::named(url).tell_one(5);
-        std::thread::sleep(std::time::Duration::from_secs(8));
-        Distributor::named(url).tell_one(3);
+        Distributor::named(url).tell_one((720, 480));
     }
 
     Bastion::block_until_stopped();
@@ -379,6 +390,46 @@ fn set_framerate_fullscreen(pipeline: gst::Pipeline, new_framerate: i32) -> gst:
     let new_caps = gst::Caps::new_simple(
         "video/x-raw",
         &[("framerate", &gst::Fraction::new(new_framerate, 1))],
+    );
+
+    filter.set_property("caps", &new_caps);
+
+    pipeline.set_state(gst::State::Ready);
+    pipeline.set_state(gst::State::Playing);
+
+    pipeline
+}
+
+fn set_resolution_fullscreen(pipeline: gst::Pipeline, new_resolution: (i32, i32)) -> gst::Pipeline {
+    let filter = pipeline
+        .by_name("filter1")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
+
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("width", &new_resolution.0), ("height", &new_resolution.1)],
+    );
+
+    filter.set_property("caps", &new_caps);
+
+    pipeline.set_state(gst::State::Ready);
+    pipeline.set_state(gst::State::Playing);
+
+    pipeline
+}
+
+fn set_resolution_fullscreen(pipeline: gst::Pipeline, new_resolution: (i32, i32)) -> gst::Pipeline {
+    let filter = pipeline
+        .by_name("filter3")
+        .expect("Cannot find any element named filter")
+        .downcast::<gst::Element>()
+        .expect("Cannot downcast filter to element");
+
+    let new_caps = gst::Caps::new_simple(
+        "video/x-raw",
+        &[("width", &new_resolution.0), ("height", &new_resolution.1)],
     );
 
     filter.set_property("caps", &new_caps);
