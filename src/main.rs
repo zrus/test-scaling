@@ -86,8 +86,8 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                // let pipeline = set_framerate_fullscreen(pipeline, fps);
-                                set_framerate_thumbnail(pipeline, fps);
+                                let pipeline = set_framerate_fullscreen(pipeline, fps);
+                                // set_framerate_thumbnail(pipeline, fps);
                             });
                     }
                 })
