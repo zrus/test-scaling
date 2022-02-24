@@ -162,6 +162,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     let sink2 = gst::ElementFactory::make("appsink", Some("app2"))?;
 
     src.set_property("location", url);
+    tee.set_property("allow-not-linked", &true);
     queue1.set_property_from_str("leaky", "downstream");
     queue2.set_property_from_str("leaky", "downstream");
     queue3.set_property_from_str("leaky", "downstream");
