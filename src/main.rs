@@ -25,7 +25,7 @@ struct ErrorMessage {
 
 fn main() {
     let cam_list = vec![
-        // "rtsp://10.50.31.171/1/h264major",
+        "rtsp://10.50.31.171/1/h264major",
         // "rtsp://10.50.13.231/1/h264major",
         // "rtsp://10.50.13.233/1/h264major",
         // "rtsp://10.50.13.234/1/h264major",
@@ -36,7 +36,7 @@ fn main() {
         // "rtsp://10.50.13.239/1/h264major",
         // "rtsp://10.50.13.240/1/h264major",
         // "rtsp://10.50.13.241/1/h264major",
-        "rtsp://10.50.13.242/1/h264major",
+        // "rtsp://10.50.13.242/1/h264major",
         // "rtsp://10.50.13.243/1/h264major",
         // "rtsp://10.50.13.244/1/h264major",
         // "rtsp://10.50.13.245/1/h264major",
