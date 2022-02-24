@@ -82,7 +82,7 @@ fn main() {
                                             Some(pl) => pl,
                                             None => return,
                                         };
-                                        pipeline.send_event(gst::event::Eos::new());
+                                        pipeline.set_state(gst::State::Null);
                                     }
                                     _ => {}
                                 }
@@ -320,7 +320,7 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                 .into());
             }
             MessageView::StateChanged(s) => {
-                println!("{}", s.current());
+                println!("{:?}", s.current());
             }
             _ => (),
         }
