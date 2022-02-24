@@ -83,6 +83,7 @@ fn main() {
                                             None => return,
                                         };
                                         pipeline.set_state(gst::State::Null);
+                                        pipeline.send_event(gst::event::Eos::new());
                                     }
                                     _ => {}
                                 }
