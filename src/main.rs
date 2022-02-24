@@ -6,8 +6,8 @@ use gst::{
     element_error,
     glib::{self},
     prelude::{
-        Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
-        PadExt,
+        Cast, ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExt, GstBinExtManual,
+        GstObjectExt, ObjectExt, PadExt,
     },
 };
 use gst_app::AppSink;
@@ -77,6 +77,13 @@ fn main() {
                                             main_loop(pipeline);
                                         }};
                                     }
+                                    "stop" => {
+                                        let pipeline = match pl_weak.upgrade() {
+                                            Some(pl) => pl,
+                                            None => return,
+                                        };
+                                        pipeline.send_event(gst::event::Eos::new());
+                                    }
                                     _ => {}
                                 }
                             })
@@ -86,8 +93,8 @@ fn main() {
                                     Some(pl) => pl,
                                     None => return,
                                 };
-                                // let pipeline = set_framerate_fullscreen(pipeline, fps);
-                                // set_framerate_thumbnail(pipeline, fps);
+                                let pipeline = set_framerate_fullscreen(pipeline, fps);
+                                set_framerate_thumbnail(pipeline, fps);
                             })
                             .on_tell(|resolution: (i32, i32), _| {
                                 println!("Change resolution");
@@ -96,7 +103,7 @@ fn main() {
                                     None => return,
                                 };
                                 let pipeline = set_resolution_fullscreen(pipeline, resolution);
-                                // set_resolution_fullscreen(pipeline, resolution);
+                                set_resolution_fullscreen(pipeline, resolution);
                             });
                     }
                 })
@@ -107,8 +114,10 @@ fn main() {
         // Distributor::named(url).tell_one(5);
         // std::thread::sleep(std::time::Duration::from_secs(8));
         // Distributor::named(url).tell_one(3);
+        // std::thread::sleep(std::time::Duration::from_secs(8));
+        // Distributor::named(url).tell_one((720, 480));
         std::thread::sleep(std::time::Duration::from_secs(8));
-        Distributor::named(url).tell_one((720, 480));
+        Distributor::named(url).tell_one("stop");
     }
 
     Bastion::block_until_stopped();
@@ -309,6 +318,9 @@ fn main_loop(pipeline: gst::Pipeline) -> Result<(), Error> {
                     source: err.error(),
                 }
                 .into());
+            }
+            MessageView::StateChanged(s) => {
+                println!("{}", s.current());
             }
             _ => (),
         }
