@@ -1,12 +1,10 @@
-use std::sync::{Arc, RwLock};
-
 use anyhow::Error;
 use bastion::prelude::*;
 use byte_slice_cast::*;
 use derive_more::{Display, Error};
 use gst::{
     element_error,
-    glib::{self, clone::Downgrade},
+    glib::{self},
     prelude::{
         Cast, ElementExt, GObjectExtManualGst, GstBinExt, GstBinExtManual, GstObjectExt, ObjectExt,
         PadExt,
@@ -65,7 +63,7 @@ fn main() {
                         }
                     };
                     loop {
-                        let pl_weak = ObjectExt::downgrade(&pipeline);
+                        let pl_weak = pipeline.downgrade();
                         MessageHandler::new(ctx.recv().await?)
                             .on_tell(|cmd: &str, _| {
                                 let pl_weak = pl_weak.clone();
@@ -211,7 +209,7 @@ fn create_pipeline(url: &str) -> Result<gst::Pipeline, Error> {
     pipeline.add_many(elements).expect("");
 
     let _ = src.link(&rtph264depay);
-    let rtph264depay_weak = ObjectExt::downgrade(&rtph264depay);
+    let rtph264depay_weak = rtph264depay.downgrade();
     src.connect_pad_added(move |_, src_pad| {
         let rtph264depay = match rtph264depay_weak.upgrade() {
             Some(depay) => depay,
