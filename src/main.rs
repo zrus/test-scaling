@@ -420,7 +420,7 @@ fn set_resolution_fullscreen(pipeline: gst::Pipeline, new_resolution: (i32, i32)
     pipeline
 }
 
-fn set_resolution_fullscreen(pipeline: gst::Pipeline, new_resolution: (i32, i32)) -> gst::Pipeline {
+fn set_resolution_thumbnail(pipeline: gst::Pipeline, new_resolution: (i32, i32)) -> gst::Pipeline {
     let filter = pipeline
         .by_name("filter3")
         .expect("Cannot find any element named filter")
