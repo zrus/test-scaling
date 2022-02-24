@@ -95,8 +95,8 @@ fn main() {
         Distributor::named(url).tell_one("start");
         std::thread::sleep(std::time::Duration::from_secs(8));
         Distributor::named(url).tell_one(5);
-        // std::thread::sleep(std::time::Duration::from_secs(8));
-        // Distributor::named(url).tell_one(3);
+        std::thread::sleep(std::time::Duration::from_secs(8));
+        Distributor::named(url).tell_one(3);
     }
 
     Bastion::block_until_stopped();
